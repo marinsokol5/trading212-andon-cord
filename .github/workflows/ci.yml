@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Compile production variant
+        run: swift build -Xswiftc -DANDON_PROD
+      - name: Offline unit tests
+        run: swift test
+      - name: Offline production-variant unit tests
+        run: swift test -Xswiftc -DANDON_PROD
