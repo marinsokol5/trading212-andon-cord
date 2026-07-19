@@ -65,7 +65,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             tint: model.settings.menuBarTint)
         button.image = image
         button.title = ""
-        statusItem.length = image.size.width + 6
         button.setAccessibilityLabel("Trading212 Andon Cord")
         button.setAccessibilityValue(privateMode ? "Portfolio value hidden" : model.menuBarValue)
 

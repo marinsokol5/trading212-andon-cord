@@ -55,11 +55,11 @@ enum MenuBarRenderer {
         case .icon, .t212: 10
         case .label: labelText.size(withAttributes: labelAttributes).width
         }
-        let width = ceil(max(valueSize.width, topWidth)) + 6
+        let width = ceil(max(valueSize.width, topWidth)) + 4
 
         return NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
-            let topRect = NSRect(x: (rect.width - topWidth) / 2, y: rect.height - 10.5,
-                                 width: topWidth, height: 8.5)
+            let topRect = NSRect(x: (rect.width - topWidth) / 2, y: rect.height - 11,
+                                 width: topWidth, height: 10)
             drawSymbol(symbol, in: topRect, attributes: labelAttributes, color: foreground)
             if privateMode {
                 drawEyeSlash(
@@ -93,10 +93,10 @@ enum MenuBarRenderer {
             ? 16
             : ceil((value as NSString).size(withAttributes: valueAttributes).width)
         let gap: CGFloat = 4
-        let width = glyphWidth + gap + valueWidth + 6
+        let width = glyphWidth + gap + valueWidth + 4
 
         return NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
-            let startX: CGFloat = 3
+            let startX: CGFloat = 2
             drawSymbol(
                 symbol,
                 in: NSRect(x: startX, y: (rect.height - 14) / 2, width: glyphWidth, height: 14),
@@ -182,10 +182,14 @@ enum MenuBarRenderer {
     }
 
     /// Small monochrome rising stock line capped with an arrowhead at its peak —
-    /// the same trend mark InvestingBar draws for its menu bar. Geometry is
-    /// intentionally simple so it remains readable at 8–15 points.
+    /// the same trend mark InvestingBar draws for its menu bar, with its exact
+    /// proportions (10% inset, 0.11 stroke, 0.30 barbs). Drawn into the largest
+    /// centered square of `rect` so neither layout squashes the climb.
     private static func drawMark(in rect: NSRect, color: NSColor) {
-        let area = rect.insetBy(dx: rect.width * 0.06, dy: rect.height * 0.10)
+        let side = min(rect.width, rect.height)
+        let box = NSRect(x: rect.midX - side / 2, y: rect.midY - side / 2,
+                         width: side, height: side)
+        let area = box.insetBy(dx: side * 0.10, dy: side * 0.10)
         let normalized: [NSPoint] = [
             NSPoint(x: 0.00, y: 0.10), NSPoint(x: 0.25, y: 0.42),
             NSPoint(x: 0.50, y: 0.28), NSPoint(x: 0.75, y: 0.74),
@@ -197,7 +201,7 @@ enum MenuBarRenderer {
         }
 
         let path = NSBezierPath()
-        path.lineWidth = max(1, min(rect.width, rect.height) * 0.13)
+        path.lineWidth = max(1, side * 0.11)
         path.lineCapStyle = .round
         path.lineJoinStyle = .round
         path.move(to: points[0])
@@ -207,7 +211,7 @@ enum MenuBarRenderer {
         let tip = points[points.count - 1]
         let prev = points[points.count - 2]
         let angle = atan2(tip.y - prev.y, tip.x - prev.x)
-        let barbLength = min(rect.width, rect.height) * 0.34
+        let barbLength = side * 0.30
         let spread = CGFloat.pi / 7
         for offset in [-spread, spread] {
             path.move(to: tip)
