@@ -5,7 +5,7 @@ cask "trading212-andon-cord" do
   sha256 "f19c091861491a9528856d3d640aa781d75506140bd676ce8041065806392c1e"
 
   url "https://github.com/marinsokol5/trading212-andon-cord/releases/download/v#{version}/Trading212-Andon-Cord-#{version}.zip"
-  name "Trading212 Andon Cord"
+  name "Trading 212 Andon Cord"
   desc "Unofficial open-source Trading 212 portfolio menu bar and safety-first CLI"
   homepage "https://github.com/marinsokol5/trading212-andon-cord"
 

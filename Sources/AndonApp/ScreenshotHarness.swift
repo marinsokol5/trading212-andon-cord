@@ -239,20 +239,21 @@ enum ScreenshotHarness {
             let quantity: Decimal
             let pieQuantity: Decimal
             let price: Decimal
+            let pnl: Decimal?
         }
         func d(_ string: String) -> Decimal {
             Decimal(string: string, locale: Locale(identifier: "en_US_POSIX")) ?? 0
         }
 
         let holdings: [Holding] = [
-            Holding(ticker: "AAPL_US_EQ", name: "Apple", quantity: d("42"), pieQuantity: d("0"), price: d("195.40")),
-            Holding(ticker: "MSFT_US_EQ", name: "Microsoft", quantity: d("18"), pieQuantity: d("0"), price: d("402.10")),
-            Holding(ticker: "NVDA_US_EQ", name: "NVIDIA", quantity: d("25"), pieQuantity: d("5"), price: d("118.52")),
-            Holding(ticker: "VUAA_EQ", name: "Vanguard S&P 500 UCITS ETF", quantity: d("95.5"), pieQuantity: d("95.5"), price: d("92.30")),
-            Holding(ticker: "IWDA_EQ", name: "iShares Core MSCI World", quantity: d("120"), pieQuantity: d("40"), price: d("88.75")),
-            Holding(ticker: "ASML_NA_EQ", name: "ASML Holding", quantity: d("6"), pieQuantity: d("0"), price: d("861.20")),
-            Holding(ticker: "TSLA_US_EQ", name: "Tesla", quantity: d("12.5"), pieQuantity: d("0"), price: d("219.86")),
-            Holding(ticker: "SXR8_DE_EQ", name: "iShares Core S&P 500", quantity: d("3.2"), pieQuantity: d("0"), price: d("512.44")),
+            Holding(ticker: "AAPL_US_EQ", name: "Apple", quantity: d("42"), pieQuantity: d("0"), price: d("195.40"), pnl: d("612.40")),
+            Holding(ticker: "MSFT_US_EQ", name: "Microsoft", quantity: d("18"), pieQuantity: d("0"), price: d("402.10"), pnl: d("1024.16")),
+            Holding(ticker: "NVDA_US_EQ", name: "NVIDIA", quantity: d("25"), pieQuantity: d("5"), price: d("118.52"), pnl: d("-341.75")),
+            Holding(ticker: "VUAA_EQ", name: "Vanguard S&P 500 UCITS ETF", quantity: d("95.5"), pieQuantity: d("95.5"), price: d("92.30"), pnl: d("788.02")),
+            Holding(ticker: "IWDA_EQ", name: "iShares Core MSCI World", quantity: d("120"), pieQuantity: d("40"), price: d("88.75"), pnl: d("1502.60")),
+            Holding(ticker: "ASML_NA_EQ", name: "ASML Holding", quantity: d("6"), pieQuantity: d("0"), price: d("861.20"), pnl: d("-96.30")),
+            Holding(ticker: "TSLA_US_EQ", name: "Tesla", quantity: d("12.5"), pieQuantity: d("0"), price: d("219.86"), pnl: d("214.05")),
+            Holding(ticker: "SXR8_DE_EQ", name: "iShares Core S&P 500", quantity: d("3.2"), pieQuantity: d("0"), price: d("512.44"), pnl: nil),
         ]
 
         let sellableTotal = holdings.reduce(Decimal.zero) {
@@ -272,7 +273,8 @@ enum ScreenshotHarness {
                 nativePrice: holding.price,
                 accountPricePerShare: holding.price,
                 sellableAccountValue: sellableValue,
-                sellableWeight: sellableTotal > 0 ? sellableValue / sellableTotal : 0)
+                sellableWeight: sellableTotal > 0 ? sellableValue / sellableTotal : 0,
+                unrealizedProfitLoss: holding.pnl)
         }
 
         let holdingsTotal = holdings.reduce(Decimal.zero) { $0 + $1.quantity * $1.price }

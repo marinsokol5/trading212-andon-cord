@@ -85,12 +85,15 @@ echo "==> published $TAG"
 echo "==> upgrading local install"
 brew upgrade -y --cask marinsokol5/tap/trading212-andon-cord
 
-echo "==> restarting Trading212 Andon Cord"
-if pgrep -xq "Trading212 Andon Cord"; then
-  osascript -e 'quit app "Trading212 Andon Cord"'
+# Match the running app by its bundle path (the process name is the
+# executable, which pgrep truncates), and quit by bundle id so display-name
+# changes never break this.
+echo "==> restarting Trading 212 Andon Cord"
+if pgrep -qf "Trading212 Andon Cord.app/Contents/MacOS"; then
+  osascript -e 'tell application id "com.marinsokol.trading212andoncord" to quit'
   for _ in {1..20}; do
-    pgrep -xq "Trading212 Andon Cord" || break
+    pgrep -qf "Trading212 Andon Cord.app/Contents/MacOS" || break
     sleep 0.25
   done
 fi
-open -a "Trading212 Andon Cord"
+open -b com.marinsokol.trading212andoncord

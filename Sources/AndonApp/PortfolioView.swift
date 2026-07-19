@@ -12,6 +12,11 @@ struct PortfolioView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScreenHeader("Portfolio", subtitle: "Trading 212 · \(model.environment.displayName)") {
+                if let asOf = model.displaySnapshot?.asOf {
+                    Text("Updated \(asOf.formatted(.relative(presentation: .named)))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 if model.isRefreshing {
                     ProgressView().controlSize(.small)
                 }
@@ -49,7 +54,7 @@ struct PortfolioView: View {
         ContentUnavailableView {
             Label("Connect a viewing key", systemImage: "key.horizontal")
         } description: {
-            Text("Trading212 Andon Cord needs a read-only Trading 212 API key to show your account. Trading remains unavailable until you separately add a trading key.")
+            Text("Trading 212 Andon Cord needs a read-only Trading 212 API key to show your account. Trading remains unavailable until you separately add a trading key.")
                 .frame(maxWidth: 470)
         } actions: {
             Button("Open Account") { model.navigate(to: .account) }
@@ -62,7 +67,7 @@ struct PortfolioView: View {
         ContentUnavailableView {
             Label("Portfolio unavailable", systemImage: "exclamationmark.triangle")
         } description: {
-            Text(model.errorMessage ?? "Trading212 Andon Cord has no cached portfolio to display yet.")
+            Text(model.errorMessage ?? "Trading 212 Andon Cord has no cached portfolio to display yet.")
                 .frame(maxWidth: 470)
         } actions: {
             Button("Try Again") { Task { await model.refresh() } }
@@ -116,13 +121,10 @@ struct PortfolioView: View {
                             symbol: pnl < 0 ? "arrow.down.right" : "arrow.up.right",
                             tint: pnl < 0 ? Theme.danger : Theme.success)
                     }
-                    MetricCard(
-                        title: "Updated",
-                        value: snapshot.asOf.formatted(date: .abbreviated, time: .shortened),
-                        symbol: "clock")
                 }
 
                 topPositions
+                allocation
             }
             .padding(.horizontal, 22)
             .padding(.bottom, 18)
@@ -173,6 +175,90 @@ struct PortfolioView: View {
                 .foregroundStyle(.secondary)
         }
     }
+
+    /// One horizontal 100% bar of sellable value, top holdings plus a neutral
+    /// remainder. Everything here is a proportion, so it stays visible in
+    /// privacy mode by design.
+    @ViewBuilder
+    private var allocation: some View {
+        if let portfolio = model.currentPortfolio {
+            let entries = Self.allocationEntries(portfolio)
+            if !entries.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Allocation").font(.title3.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 12) {
+                        GeometryReader { geo in
+                            let gaps = CGFloat(entries.count - 1) * 2
+                            HStack(spacing: 2) {
+                                ForEach(entries) { entry in
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(entry.color)
+                                        .frame(width: max(3, (geo.size.width - gaps) * entry.layoutFraction))
+                                        .help("\(entry.name): \(entry.percentText) of sellable value")
+                                }
+                            }
+                        }
+                        .frame(height: 14)
+                        .accessibilityLabel("Allocation of sellable value")
+
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)],
+                            alignment: .leading, spacing: 8) {
+                                ForEach(entries) { entry in
+                                    HStack(spacing: 6) {
+                                        Circle().fill(entry.color).frame(width: 8, height: 8)
+                                        Text(entry.name)
+                                            .font(.caption)
+                                            .lineLimit(1)
+                                        Text(entry.percentText)
+                                            .font(.caption.monospacedDigit())
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+                }
+            }
+        }
+    }
+
+    private struct AllocationEntry: Identifiable {
+        let id: String
+        let name: String
+        let fraction: Decimal
+        let color: Color
+
+        var layoutFraction: CGFloat { CGFloat(NSDecimalNumber(decimal: fraction).doubleValue) }
+        var percentText: String {
+            String(format: "%.1f%%", NSDecimalNumber(decimal: fraction * 100).doubleValue)
+        }
+    }
+
+    private static let allocationSlots = 5
+
+    private static func allocationEntries(_ portfolio: CurrentPortfolio) -> [AllocationEntry] {
+        let weighted = portfolio.positions
+            .filter { $0.sellableWeight > 0 }
+            .sorted { $0.sellableWeight > $1.sellableWeight }
+        guard !weighted.isEmpty else { return [] }
+
+        var entries = weighted.prefix(allocationSlots).enumerated().map { index, position in
+            AllocationEntry(
+                id: position.ticker,
+                name: position.name.isEmpty ? position.ticker : position.name,
+                fraction: position.sellableWeight,
+                color: Theme.Chart.categorical[index])
+        }
+        let rest = weighted.dropFirst(allocationSlots).reduce(Decimal(0)) { $0 + $1.sellableWeight }
+        if rest > 0 {
+            entries.append(AllocationEntry(
+                id: "•other", name: "Other", fraction: rest, color: Theme.Chart.other))
+        }
+        return entries
+    }
 }
 
 private struct MetricCard: View {
@@ -204,27 +290,38 @@ private struct PositionRow: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(position.ticker).font(.headline)
-                Text(position.name.isEmpty ? position.instrumentCurrency : position.name)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+        Button {
+            model.showInPositions(position)
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(position.name.isEmpty ? position.ticker : position.name)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Text(position.ticker)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 18)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(model.privateAmount(position.sellableAccountValue, currency: currency, style: .fullWithCents))
+                        .font(.body.monospacedDigit())
+                    Text(model.isPrivate
+                         ? AppModel.hiddenText
+                         : "\(position.sellableQuantity) sellable" + (position.pieQuantity > 0 ? " · \(position.pieQuantity) in pies" : ""))
+                        .font(.caption)
+                        .foregroundStyle(position.pieQuantity > 0
+                                         ? Theme.warning
+                                         : Color(nsColor: .secondaryLabelColor))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            Spacer(minLength: 18)
-            VStack(alignment: .trailing, spacing: 3) {
-                Text(model.privateAmount(position.sellableAccountValue, currency: currency, style: .fullWithCents))
-                    .font(.body.monospacedDigit())
-                Text(model.isPrivate
-                     ? AppModel.hiddenText
-                     : "\(position.sellableQuantity) sellable" + (position.pieQuantity > 0 ? " · \(position.pieQuantity) in pies" : ""))
-                    .font(.caption)
-                    .foregroundStyle(position.pieQuantity > 0
-                                     ? Theme.warning
-                                     : Color(nsColor: .secondaryLabelColor))
-            }
+            .padding(.vertical, 11)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 11)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Show \(position.name.isEmpty ? position.ticker : position.name) in Positions")
     }
 }

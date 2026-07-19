@@ -59,6 +59,13 @@ struct SnapshotsView: View {
         } description: {
             Text("Create one in Terminal with `t212 snapshot save`. A real `t212 sell-all` also writes a pre-sale snapshot automatically before placing any order.")
                 .frame(maxWidth: 480)
+        } actions: {
+            Button {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString("t212 snapshot save", forType: .string)
+            } label: {
+                Label("Copy Command", systemImage: "doc.on.doc")
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

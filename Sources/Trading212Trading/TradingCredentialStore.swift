@@ -12,7 +12,7 @@ public struct TradingCredentialStoreConfiguration: Equatable, Sendable {
     public init(
         variant: AppVariant = .current,
         useDataProtectionKeychain: Bool? = nil,
-        authenticationPrompt: String = "Allow Trading212 Andon Cord to access the trading credential"
+        authenticationPrompt: String = "Allow Trading 212 Andon Cord to access the trading credential"
     ) {
         service = "\(variant.bundleIdentifier).credentials.trading"
         if variant.usesProvisionedKeychain {
@@ -33,7 +33,7 @@ public struct TradingCredentialStoreConfiguration: Equatable, Sendable {
         service: String,
         accessGroup: String? = nil,
         useDataProtectionKeychain: Bool = true,
-        authenticationPrompt: String = "Allow Trading212 Andon Cord to access the trading credential"
+        authenticationPrompt: String = "Allow Trading 212 Andon Cord to access the trading credential"
     ) {
         self.service = service
         self.accessGroup = accessGroup

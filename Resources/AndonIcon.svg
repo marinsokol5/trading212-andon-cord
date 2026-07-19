@@ -4,13 +4,40 @@
       <stop offset="0" stop-color="#ffd23f"/>
       <stop offset="1" stop-color="#f0a400"/>
     </linearGradient>
-    <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff6b5e"/>
-      <stop offset="1" stop-color="#c9182b"/>
+    <radialGradient id="dome" cx="0.36" cy="0.30" r="0.85">
+      <stop offset="0" stop-color="#ff9a85"/>
+      <stop offset="0.35" stop-color="#f04e46"/>
+      <stop offset="0.75" stop-color="#c9182b"/>
+      <stop offset="1" stop-color="#96101f"/>
+    </radialGradient>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a31220"/>
+      <stop offset="1" stop-color="#6f0a15"/>
     </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.30"/>
+      <stop offset="0.7" stop-color="#000000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spec" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
   <rect x="78" y="78" width="868" height="868" rx="212" fill="url(#bg)"/>
-  <circle cx="512" cy="512" r="338" fill="#262b34"/>
-  <circle cx="512" cy="512" r="258" fill="url(#btn)"/>
-  <path d="M 366 434 A 210 210 0 0 1 658 434" stroke="#ffffff" stroke-opacity="0.5" stroke-width="44" fill="none" stroke-linecap="round"/>
+  <g stroke="#262b34" stroke-width="26" stroke-linecap="round">
+    <path d="M 250 520 L 250 740"/>
+    <path d="M 390 430 L 390 690"/>
+    <path d="M 530 330 L 530 610"/>
+  </g>
+  <g fill="#262b34">
+    <rect x="210" y="560" width="80" height="140" rx="18"/>
+    <rect x="350" y="470" width="80" height="170" rx="18"/>
+    <rect x="490" y="370" width="80" height="190" rx="18"/>
+  </g>
+  <ellipse cx="710" cy="556" rx="120" ry="30" fill="url(#shadow)"/>
+  <circle cx="710" cy="452" r="96" fill="url(#side)"/>
+  <circle cx="710" cy="414" r="96" fill="url(#dome)"/>
+  <ellipse cx="676" cy="374" rx="40" ry="26" fill="url(#spec)" transform="rotate(-24 676 374)"/>
 </svg>

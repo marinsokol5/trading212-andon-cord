@@ -1,5 +1,5 @@
 # Shipping identity. Keep in lockstep with Trading212Core.AppVariant.
-APP_NAME := Trading212 Andon Cord
+APP_NAME := Trading 212 Andon Cord
 APP_BASENAME := Trading212 Andon Cord
 EXEC_NAME := Trading212AndonCord
 BUNDLE_ID := com.marinsokol.trading212andoncord

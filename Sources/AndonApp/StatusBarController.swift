@@ -67,7 +67,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             trendDown: model.dailyChange?.isDown == true)
         button.image = image
         button.title = ""
-        button.setAccessibilityLabel("Trading212 Andon Cord")
+        button.setAccessibilityLabel("Trading 212 Andon Cord")
         button.setAccessibilityValue(privateMode ? "Portfolio value hidden" : model.menuBarValue)
 
         // The menu rebuilds on every open; these keep an already-open menu
@@ -110,12 +110,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             key: privacyKey?.key ?? "",
             mask: privacyKey?.mask ?? [])
         menu.addItem(.separator())
-        addAction("Open Trading212 Andon Cord", symbol: "macwindow",
+        addAction("Open Trading 212 Andon Cord", symbol: "macwindow",
                   selector: #selector(openAppAction), key: "o")
         addAction("Settings…", symbol: "gearshape",
                   selector: #selector(openSettingsAction), key: ",")
         menu.addItem(.separator())
-        addAction("Quit Trading212 Andon Cord", symbol: "power",
+        addAction("Quit Trading 212 Andon Cord", symbol: "power",
                   selector: #selector(quitAction), key: "q")
     }
 

@@ -20,6 +20,7 @@ struct SettingsView: View {
                 menuBarSection
                 privacySection
                 behaviorSection
+                aboutSection
             }
             .formStyle(.grouped)
             .frame(maxWidth: 680)
@@ -63,7 +64,33 @@ struct SettingsView: View {
             Picker("Brightness", selection: tintBinding) {
                 ForEach(MenuBarTint.allCases) { Text($0.displayName).tag($0) }
             }
+            Toggle("Show daily change", isOn: menuBarChangeBinding)
+
+            // Rendered with the real menu bar renderer on sample data, so the
+            // picker choices can be judged by eye without leaving Settings.
+            LabeledContent("Preview") {
+                Image(nsImage: menuBarPreviewImage)
+                    .renderingMode(.template)
+                    .foregroundStyle(.primary)
+            }
         }
+    }
+
+    private var menuBarPreviewImage: NSImage {
+        var value = GUIValueFormatter.string(
+            49_900.50, currency: "EUR",
+            style: model.settings.valueStyle,
+            separators: model.settings.separators)
+        if model.settings.menuBarShowsDailyChange {
+            value += " \(CurrencyDisplay.percentString(0.0129, separators: model.settings.separators))"
+        }
+        return MenuBarRenderer.image(
+            value: value,
+            privateMode: false,
+            layout: model.settings.menuBarLayout,
+            symbol: model.settings.menuBarSymbol,
+            tint: .adaptive,
+            trendDown: false)
     }
 
     private var privacySection: some View {
@@ -88,6 +115,21 @@ struct SettingsView: View {
         }
     }
 
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent("Version", value: Self.appVersion)
+            Link(
+                "Releases on GitHub",
+                destination: URL(string: "https://github.com/marinsokol5/trading212-andon-cord/releases")!)
+        }
+    }
+
+    /// Bundled builds report the Info.plist version; bare `swift build`
+    /// binaries have no bundle version and show "dev".
+    private static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+    }
+
     private var valueStyleBinding: Binding<ValueStyle> {
         Binding(get: { model.settings.valueStyle }, set: { model.settings.valueStyle = $0 })
     }
@@ -102,6 +144,10 @@ struct SettingsView: View {
     }
     private var tintBinding: Binding<MenuBarTint> {
         Binding(get: { model.settings.menuBarTint }, set: { model.settings.menuBarTint = $0 })
+    }
+    private var menuBarChangeBinding: Binding<Bool> {
+        Binding(get: { model.settings.menuBarShowsDailyChange },
+                set: { model.settings.menuBarShowsDailyChange = $0 })
     }
     private var privacyBinding: Binding<Bool> {
         Binding(get: { model.isPrivate }, set: { model.setPrivacy($0) })

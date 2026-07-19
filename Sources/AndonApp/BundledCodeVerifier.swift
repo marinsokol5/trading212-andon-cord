@@ -12,13 +12,13 @@ enum BundledCodeVerifier {
         var errorDescription: String? {
             switch self {
             case .outsideBundle:
-                "The bundled t212 command resolved outside Trading212 Andon Cord."
+                "The bundled t212 command resolved outside Trading 212 Andon Cord."
             case .invalidSignature:
-                "The bundled t212 command has an invalid or altered code signature. Reinstall Trading212 Andon Cord."
+                "The bundled t212 command has an invalid or altered code signature. Reinstall Trading 212 Andon Cord."
             case .signingInformation:
                 "The bundled t212 command's signing identity could not be verified."
             case .signerMismatch:
-                "The bundled t212 command was not signed by the same identity as Trading212 Andon Cord."
+                "The bundled t212 command was not signed by the same identity as Trading 212 Andon Cord."
             }
         }
     }

@@ -119,7 +119,8 @@ public enum CurrentPortfolioBuilder {
                 nativePrice: position.currentPrice,
                 accountPricePerShare: accountPrice,
                 sellableAccountValue: sellableValue,
-                sellableWeight: sellableTotal > 0 ? sellableValue / sellableTotal : 0)
+                sellableWeight: sellableTotal > 0 ? sellableValue / sellableTotal : 0,
+                unrealizedProfitLoss: position.walletImpact.unrealizedProfitLoss)
         }
 
         return CurrentPortfolio(

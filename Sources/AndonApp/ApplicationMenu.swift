@@ -23,8 +23,8 @@ enum ApplicationMenu {
     }
 
     private static func applicationMenu(appDelegate: AppDelegate) -> NSMenu {
-        let menu = NSMenu(title: "Trading212 Andon Cord")
-        menu.addItem(withTitle: "About Trading212 Andon Cord", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let menu = NSMenu(title: "Trading 212 Andon Cord")
+        menu.addItem(withTitle: "About Trading 212 Andon Cord", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         menu.addItem(.separator())
         let settings = menu.addItem(
             withTitle: "Settings…",
@@ -32,7 +32,7 @@ enum ApplicationMenu {
             keyEquivalent: ",")
         settings.target = appDelegate
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Hide Trading212 Andon Cord", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        menu.addItem(withTitle: "Hide Trading 212 Andon Cord", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         let hideOthers = menu.addItem(
             withTitle: "Hide Others",
             action: #selector(NSApplication.hideOtherApplications(_:)),
@@ -40,7 +40,7 @@ enum ApplicationMenu {
         hideOthers.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Trading212 Andon Cord", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "Quit Trading 212 Andon Cord", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         return menu
     }
 

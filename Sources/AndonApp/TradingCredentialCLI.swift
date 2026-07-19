@@ -122,7 +122,7 @@ enum TradingCredentialCLI {
         case notBundled
 
         var errorDescription: String? {
-            "The verified bundled t212 command could not be found. Reinstall Trading212 Andon Cord and try again."
+            "The verified bundled t212 command could not be found. Reinstall Trading 212 Andon Cord and try again."
         }
     }
 }

@@ -63,6 +63,7 @@ final class WorkspaceAndSettingsTests: XCTestCase {
         var settings = AppSettings.defaults()
         settings.privacyEnabled = true
         settings.refreshInterval = .oneMinute
+        settings.menuBarShowsDailyChange = true
         try store.save(settings)
         XCTAssertEqual(try store.load(), settings)
 

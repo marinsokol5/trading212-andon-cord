@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Trading212Core
 
@@ -21,6 +22,33 @@ enum Theme {
     enum Radius {
         static let sm: CGFloat = 7
         static let md: CGFloat = 10
+    }
+
+    /// Categorical series colors for the allocation chart, in fixed assignment
+    /// order. Both light and dark steps validated (CVD separation, lightness
+    /// band, chroma) against the respective surfaces with the dataviz palette
+    /// validator; identity is never color-alone — the legend always names and
+    /// quantifies each entry.
+    enum Chart {
+        static let categorical: [Color] = [
+            dynamic(light: "#2a78d6", dark: "#3987e5"),
+            dynamic(light: "#008300", dark: "#008300"),
+            dynamic(light: "#e87ba4", dark: "#d55181"),
+            dynamic(light: "#eda100", dark: "#c98500"),
+            dynamic(light: "#1baf7a", dark: "#199e70"),
+        ]
+        /// Neutral remainder ("Other") — deliberately hue-free so it reads as
+        /// "everything else", not a sixth series.
+        static let other = Color(nsColor: .tertiaryLabelColor)
+    }
+
+    /// A color with distinct light- and dark-appearance steps, resolved at
+    /// draw time so mode switches repaint without a restart.
+    private static func dynamic(light: String, dark: String) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let hex = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+            return NSColor(Color(hex: hex))
+        })
     }
 }
 
@@ -53,10 +81,10 @@ extension Color {
     }
 }
 
-/// Miniature of the app icon — yellow tile, dark collar, red stop button —
-/// for in-app identity marks (sidebar brand, status-menu header). The literal
-/// icon palette lives here, not in the semantic roles above: red still means
-/// LIVE/destructive everywhere else.
+/// Miniature of the app icon — the glossy red arcade button on the yellow
+/// tile. At brand-mark sizes the icon's candlesticks fall away; the button
+/// alone carries the identity. The literal icon palette lives here, not in
+/// the semantic roles above: red still means LIVE/destructive everywhere else.
 struct BrandMark: View {
     var size: CGFloat = 28
 
@@ -66,15 +94,23 @@ struct BrandMark: View {
                 colors: [Color(hex: "#ffd23f"), Color(hex: "#f0a400")],
                 startPoint: .top, endPoint: .bottom))
             .overlay(
-                Circle()
-                    .fill(Color(hex: "#262b34"))
-                    .padding(size * 0.11))
-            .overlay(
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color(hex: "#ff6b5e"), Color(hex: "#c9182b")],
-                        startPoint: .top, endPoint: .bottom))
-                    .padding(size * 0.20))
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "#6f0a15"))
+                        .offset(y: size * 0.10)
+                    Circle()
+                        .fill(RadialGradient(
+                            stops: [
+                                .init(color: Color(hex: "#ff9a85"), location: 0),
+                                .init(color: Color(hex: "#f04e46"), location: 0.35),
+                                .init(color: Color(hex: "#c9182b"), location: 0.75),
+                                .init(color: Color(hex: "#96101f"), location: 1),
+                            ],
+                            center: UnitPoint(x: 0.36, y: 0.30),
+                            startRadius: 0,
+                            endRadius: size * 0.55))
+                }
+                .padding(size * 0.18))
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }

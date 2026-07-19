@@ -42,6 +42,9 @@ final class AppModel {
     let settings: GUISettings
 
     private(set) var activeRoute: AppRoute = .account
+    /// Live filter text for the Positions table; set by `showInPositions` so a
+    /// clicked Portfolio row lands on that instrument.
+    var positionsFilter = ""
 
     private(set) var currentPortfolio: CurrentPortfolio?
     private(set) var dailyBaseline: DailyBaseline?
@@ -87,11 +90,15 @@ final class AppModel {
     var menuBarValue: String {
         if isPrivate, displaySnapshot != nil { return Self.hiddenText }
         if let snapshot = displaySnapshot {
-            return GUIValueFormatter.string(
+            var text = GUIValueFormatter.string(
                 snapshot.totalValue,
                 currency: snapshot.currencyCode,
                 style: settings.valueStyle,
                 separators: settings.separators)
+            if settings.menuBarShowsDailyChange, let fraction = dailyChange?.fraction {
+                text += " \(CurrencyDisplay.percentString(fraction, separators: settings.separators))"
+            }
+            return text
         }
         if !hasReadCredential { return "—" }
         return isRefreshing ? "…" : "⚠"
@@ -137,6 +144,12 @@ final class AppModel {
 
     func navigate(to route: AppRoute) {
         activeRoute = route
+    }
+
+    /// Jump to the Positions screen with the table filtered to one instrument.
+    func showInPositions(_ position: PortfolioPosition) {
+        positionsFilter = position.ticker
+        activeRoute = .positions
     }
 
     func start() async {

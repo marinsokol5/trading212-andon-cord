@@ -38,7 +38,15 @@ public enum Trading212APIError: Error, Equatable, Sendable, LocalizedError {
         case let .server(status, message):
             message.map { "Trading 212 server error (HTTP \(status)): \($0)" }
                 ?? "Trading 212 server error (HTTP \(status))."
-        case let .network(failure): "Network request failed (\(failure.rawValue))."
+        case let .network(failure):
+            switch failure {
+            case .offline: "No internet connection."
+            case .timedOut: "Trading 212 took too long to respond. Try again."
+            case .connectionLost: "The connection to Trading 212 was interrupted."
+            case .cannotReachHost: "Couldn't reach Trading 212. Check your connection."
+            case .cancelled: "The request was cancelled."
+            case .other: "The network request failed."
+            }
         case .invalidResponse: "Trading 212 returned a non-HTTP response."
         case let .decoding(endpoint): "Trading 212 returned an invalid response for \(endpoint)."
         case let .invalidPortfolio(error): error.localizedDescription

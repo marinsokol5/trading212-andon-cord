@@ -107,6 +107,7 @@ final class GUISettings {
     var menuBarLayout: MenuBarLayout { didSet { persistSettings() } }
     var menuBarSymbol: MenuBarSymbol { didSet { persistSettings() } }
     var menuBarTint: MenuBarTint { didSet { persistSettings() } }
+    var menuBarShowsDailyChange: Bool { didSet { persistSettings() } }
     var valueStyle: ValueStyle { didSet { persistSettings() } }
     var separators: NumberSeparators { didSet { persistSettings() } }
     var privacyShortcut: ShortcutDefinition { didSet { persistSettings() } }
@@ -127,6 +128,7 @@ final class GUISettings {
         self.menuBarLayout = loaded.menuBarLayout
         self.menuBarSymbol = loaded.menuBarSymbol
         self.menuBarTint = loaded.menuBarTint
+        self.menuBarShowsDailyChange = loaded.menuBarShowsDailyChange
         self.valueStyle = loaded.displayStyle
         self.separators = loaded.separatorStyle
         self.privacyShortcut = ShortcutDefinition(loaded.privacyShortcut)
@@ -186,6 +188,7 @@ final class GUISettings {
             menuBarLayout: menuBarLayout,
             menuBarSymbol: menuBarSymbol,
             menuBarTint: menuBarTint,
+            menuBarShowsDailyChange: menuBarShowsDailyChange,
             privacyEnabled: privacyMode,
             privacyShortcut: privacyShortcut.coreSettings,
             launchAtLogin: launchAtLogin)

@@ -115,12 +115,16 @@ public struct PortfolioPosition: Codable, Equatable, Sendable, Identifiable {
     public let accountPricePerShare: Decimal
     public let sellableAccountValue: Decimal
     public let sellableWeight: Decimal
+    /// Unrealized P/L in the account currency, when the API reports it.
+    /// Optional so cached portfolios written before this field decode cleanly.
+    public let unrealizedProfitLoss: Decimal?
 
     public init(ticker: String, isin: String? = nil, name: String,
                 instrumentCurrency: String, quantity: Decimal,
                 sellableQuantity: Decimal, pieQuantity: Decimal,
                 nativePrice: Decimal?, accountPricePerShare: Decimal,
-                sellableAccountValue: Decimal, sellableWeight: Decimal) {
+                sellableAccountValue: Decimal, sellableWeight: Decimal,
+                unrealizedProfitLoss: Decimal? = nil) {
         self.ticker = ticker
         self.isin = isin
         self.name = name
@@ -132,5 +136,6 @@ public struct PortfolioPosition: Codable, Equatable, Sendable, Identifiable {
         self.accountPricePerShare = accountPricePerShare
         self.sellableAccountValue = sellableAccountValue
         self.sellableWeight = sellableWeight
+        self.unrealizedProfitLoss = unrealizedProfitLoss
     }
 }

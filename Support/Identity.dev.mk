@@ -4,7 +4,7 @@
 # rebuild (ad-hoc signatures change per build). No restricted Keychain groups
 # are claimed, so no provisioning profile is needed. A contributor without this
 # certificate can still build ad-hoc with `make build CODESIGN_ID=-`.
-APP_NAME := Trading212 Andon Cord (Dev)
+APP_NAME := Trading 212 Andon Cord (Dev)
 APP_BASENAME := Trading212AndonCord-dev
 EXEC_NAME := Trading212AndonCord-dev
 BUNDLE_ID := com.marinsokol.trading212andoncord.dev

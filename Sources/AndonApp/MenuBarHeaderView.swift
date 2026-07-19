@@ -11,7 +11,7 @@ struct MenuBarHeaderView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Label {
-                    Text("Trading212 Andon Cord")
+                    Text("Trading 212 Andon Cord")
                 } icon: {
                     BrandMark(size: 15)
                 }
@@ -22,21 +22,26 @@ struct MenuBarHeaderView: View {
 
             if let snapshot = model.displaySnapshot {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(model.isPrivate ? AppModel.hiddenText : model.privateAmount(
-                        snapshot.totalValue,
-                        currency: snapshot.currencyCode,
-                        style: .fullWithCents))
-                        .font(.system(size: 26, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
+                    // In privacy mode the eye-slash rides on the value line —
+                    // one line says "hidden", no separate caption needed.
+                    HStack(spacing: 7) {
+                        Text(model.isPrivate ? AppModel.hiddenText : model.privateAmount(
+                            snapshot.totalValue,
+                            currency: snapshot.currencyCode,
+                            style: .fullWithCents))
+                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                        if model.isPrivate {
+                            Image(systemName: "eye.slash")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityLabel(model.isPrivate ? "Portfolio value hidden" : "Portfolio value")
                     if let change = model.dailyChange {
                         DailyChangeLabel(change: change, model: model)
                             .font(.caption)
                     }
-                    if model.isPrivate {
-                        Label("Portfolio value hidden", systemImage: "eye.slash")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
+                    if !model.isPrivate {
                         HStack(spacing: 4) {
                             Text("Cash \(model.privateAmount(snapshot.freeCash, currency: snapshot.currencyCode, style: .fullWithCents))")
                             Text("·")

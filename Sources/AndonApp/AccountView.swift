@@ -200,6 +200,10 @@ struct AccountView: View {
                     keyTitle: "API key ID", key: $tradeKey,
                     secretTitle: "Secret key", secret: $tradeSecret)
 
+                Text("Validation hands this key straight to the signed t212 command over a private pipe. The app never stores it and cannot read it back.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 phaseRow(tradePhase)
 
                 HStack {

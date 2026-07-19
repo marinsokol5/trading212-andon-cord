@@ -21,8 +21,8 @@ public enum AppVariant: String, Codable, CaseIterable, Sendable {
 
     public var appName: String {
         return switch self {
-        case .development: "Trading212 Andon Cord (Dev)"
-        case .production: "Trading212 Andon Cord"
+        case .development: "Trading 212 Andon Cord (Dev)"
+        case .production: "Trading 212 Andon Cord"
         }
     }
 

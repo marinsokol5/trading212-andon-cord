@@ -38,71 +38,127 @@ struct RenderAndonIcon {
     }
 
     private static func render(size: CGFloat) -> NSImage {
-        NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+        NSImage(size: NSSize(width: size, height: size), flipped: false) { _ in
             guard let context = NSGraphicsContext.current?.cgContext else { return false }
-            let margin = size * 0.076
-            let tile = rect.insetBy(dx: margin, dy: margin)
-            let path = CGPath(
+            // Geometry is authored in the 1024-unit y-down grid of
+            // Resources/AndonIcon.svg; pt/box/len map it into this y-up rep so
+            // both files stay coordinate-for-coordinate in sync.
+            let s = size / 1024
+            func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+                CGPoint(x: x * s, y: (1024 - y) * s)
+            }
+            func box(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGRect {
+                CGRect(x: x * s, y: (1024 - y - h) * s, width: w * s, height: h * s)
+            }
+            func len(_ v: CGFloat) -> CGFloat { v * s }
+            func gradient(_ stops: [(CGFloat, CGColor)]) -> CGGradient {
+                CGGradient(
+                    colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                    colors: stops.map(\.1) as CFArray,
+                    locations: stops.map(\.0))!
+            }
+
+            let tile = box(78, 78, 868, 868)
+            context.saveGState()
+            context.addPath(CGPath(
                 roundedRect: tile,
-                cornerWidth: tile.width * 0.245,
-                cornerHeight: tile.height * 0.245,
-                transform: nil)
-            context.saveGState()
-            context.addPath(path)
+                cornerWidth: len(212),
+                cornerHeight: len(212),
+                transform: nil))
             context.clip()
-            let colors = [
-                CGColor(srgbRed: 1.0, green: 0.824, blue: 0.247, alpha: 1),
-                CGColor(srgbRed: 0.941, green: 0.643, blue: 0.0, alpha: 1),
-            ] as CFArray
-            let gradient = CGGradient(
-                colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: colors,
-                locations: [0, 1])!
             context.drawLinearGradient(
-                gradient,
-                start: CGPoint(x: rect.midX, y: rect.maxY),
-                end: CGPoint(x: rect.midX, y: rect.minY),
+                gradient([
+                    (0, CGColor(srgbRed: 1.0, green: 0.824, blue: 0.247, alpha: 1)),
+                    (1, CGColor(srgbRed: 0.941, green: 0.643, blue: 0.0, alpha: 1)),
+                ]),
+                start: pt(512, 78),
+                end: pt(512, 946),
                 options: [])
             context.restoreGState()
 
-            let center = CGPoint(x: rect.midX, y: rect.midY)
-            let collarRadius = size * 0.330
-            context.setFillColor(CGColor(srgbRed: 0.149, green: 0.169, blue: 0.204, alpha: 1))
-            context.fillEllipse(in: CGRect(
-                x: center.x - collarRadius, y: center.y - collarRadius,
-                width: collarRadius * 2, height: collarRadius * 2))
-
-            let buttonRadius = size * 0.252
-            context.saveGState()
-            context.addEllipse(in: CGRect(
-                x: center.x - buttonRadius, y: center.y - buttonRadius,
-                width: buttonRadius * 2, height: buttonRadius * 2))
-            context.clip()
-            let buttonColors = [
-                CGColor(srgbRed: 1.0, green: 0.420, blue: 0.369, alpha: 1),
-                CGColor(srgbRed: 0.788, green: 0.094, blue: 0.169, alpha: 1),
-            ] as CFArray
-            let buttonGradient = CGGradient(
-                colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: buttonColors,
-                locations: [0, 1])!
-            context.drawLinearGradient(
-                buttonGradient,
-                start: CGPoint(x: center.x, y: center.y + buttonRadius),
-                end: CGPoint(x: center.x, y: center.y - buttonRadius),
-                options: [])
-            context.restoreGState()
-
-            context.setStrokeColor(CGColor(gray: 1, alpha: 0.5))
-            context.setLineWidth(size * 0.043)
+            // Three ascending candlesticks: wicks, then bodies.
+            let ink = CGColor(srgbRed: 0.149, green: 0.169, blue: 0.204, alpha: 1)
+            context.setStrokeColor(ink)
+            context.setLineWidth(len(26))
             context.setLineCap(.round)
-            context.addArc(
-                center: CGPoint(x: rect.midX, y: size * 0.4288),
-                radius: size * 0.2051,
-                startAngle: 0.8020,
-                endAngle: 2.3396,
-                clockwise: false)
+            for (x, top, bottom): (CGFloat, CGFloat, CGFloat) in
+                [(250, 520, 740), (390, 430, 690), (530, 330, 610)] {
+                context.move(to: pt(x, top))
+                context.addLine(to: pt(x, bottom))
+            }
             context.strokePath()
+            context.setFillColor(ink)
+            for (x, y, h): (CGFloat, CGFloat, CGFloat) in
+                [(210, 560, 140), (350, 470, 170), (490, 370, 190)] {
+                context.addPath(CGPath(
+                    roundedRect: box(x, y, 80, h),
+                    cornerWidth: len(18),
+                    cornerHeight: len(18),
+                    transform: nil))
+            }
+            context.fillPath()
+
+            // Ground shadow seating the button: radial fade squashed to an ellipse.
+            context.saveGState()
+            context.translateBy(x: pt(710, 556).x, y: pt(710, 556).y)
+            context.scaleBy(x: 1, y: 30.0 / 120.0)
+            context.drawRadialGradient(
+                gradient([
+                    (0, CGColor(gray: 0, alpha: 0.30)),
+                    (0.7, CGColor(gray: 0, alpha: 0.12)),
+                    (1, CGColor(gray: 0, alpha: 0)),
+                ]),
+                startCenter: .zero, startRadius: 0,
+                endCenter: .zero, endRadius: len(120),
+                options: [])
+            context.restoreGState()
+
+            // Pressed side wall below the dome.
+            context.saveGState()
+            context.addEllipse(in: box(614, 356, 192, 192))
+            context.clip()
+            context.drawLinearGradient(
+                gradient([
+                    (0, CGColor(srgbRed: 0.639, green: 0.071, blue: 0.125, alpha: 1)),
+                    (1, CGColor(srgbRed: 0.435, green: 0.039, blue: 0.082, alpha: 1)),
+                ]),
+                start: pt(710, 356),
+                end: pt(710, 548),
+                options: [])
+            context.restoreGState()
+
+            // Glossy dome: radial gradient lit from the upper left. The SVG's
+            // objectBoundingBox (0.36, 0.30, r 0.85) resolves to these grid values.
+            context.saveGState()
+            context.addEllipse(in: box(614, 318, 192, 192))
+            context.clip()
+            context.drawRadialGradient(
+                gradient([
+                    (0, CGColor(srgbRed: 1.0, green: 0.604, blue: 0.522, alpha: 1)),
+                    (0.35, CGColor(srgbRed: 0.941, green: 0.306, blue: 0.275, alpha: 1)),
+                    (0.75, CGColor(srgbRed: 0.788, green: 0.094, blue: 0.169, alpha: 1)),
+                    (1, CGColor(srgbRed: 0.588, green: 0.063, blue: 0.122, alpha: 1)),
+                ]),
+                startCenter: pt(683, 376), startRadius: 0,
+                endCenter: pt(683, 376), endRadius: len(163),
+                options: .drawsAfterEndLocation)
+            context.restoreGState()
+
+            // Specular highlight: soft white ellipse tilted with the light.
+            context.saveGState()
+            context.translateBy(x: pt(676, 374).x, y: pt(676, 374).y)
+            context.rotate(by: 24 * .pi / 180)
+            context.scaleBy(x: 1, y: 26.0 / 40.0)
+            context.drawRadialGradient(
+                gradient([
+                    (0, CGColor(gray: 1, alpha: 0.85)),
+                    (0.6, CGColor(gray: 1, alpha: 0.35)),
+                    (1, CGColor(gray: 1, alpha: 0)),
+                ]),
+                startCenter: .zero, startRadius: 0,
+                endCenter: .zero, endRadius: len(40),
+                options: [])
+            context.restoreGState()
             return true
         }
     }

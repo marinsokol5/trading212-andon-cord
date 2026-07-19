@@ -354,7 +354,7 @@ public actor Trading212OrderClient: MarketOrderSubmitting {
             if (300...399).contains(response.statusCode) {
                 throw OrderSubmissionError.ambiguous(
                     message: "Trading 212 returned an HTTP redirect after the market-order POST. "
-                        + "Trading212 Andon Cord did not follow it, but cannot prove the original request had no effect. "
+                        + "Trading 212 Andon Cord did not follow it, but cannot prove the original request had no effect. "
                         + "Do not retry; verify broker state."
                 )
             }

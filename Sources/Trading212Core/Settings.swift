@@ -110,6 +110,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var menuBarLayout: MenuBarLayout
     public var menuBarSymbol: MenuBarSymbol
     public var menuBarTint: MenuBarTint
+    /// Appends today's percentage change to the menu bar value when enabled.
+    public var menuBarShowsDailyChange: Bool
     public var privacyEnabled: Bool
     public var privacyShortcut: ShortcutSettings
     public var launchAtLogin: Bool
@@ -120,6 +122,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
                 menuBarLayout: MenuBarLayout = .stacked,
                 menuBarSymbol: MenuBarSymbol = .icon,
                 menuBarTint: MenuBarTint = .adaptive,
+                menuBarShowsDailyChange: Bool = false,
                 privacyEnabled: Bool = false,
                 privacyShortcut: ShortcutSettings = .defaultPrivacy,
                 launchAtLogin: Bool = false) {
@@ -129,6 +132,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.menuBarLayout = menuBarLayout
         self.menuBarSymbol = menuBarSymbol
         self.menuBarTint = menuBarTint
+        self.menuBarShowsDailyChange = menuBarShowsDailyChange
         self.privacyEnabled = privacyEnabled
         self.privacyShortcut = privacyShortcut
         self.launchAtLogin = launchAtLogin
@@ -138,7 +142,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     // of runtime environment selection; unknown keys are ignored on decode.
     private enum CodingKeys: String, CodingKey {
         case refreshInterval, displayStyle, separatorStyle
-        case menuBarLayout, menuBarSymbol, menuBarTint, privacyEnabled
+        case menuBarLayout, menuBarSymbol, menuBarTint, menuBarShowsDailyChange, privacyEnabled
         case privacyShortcut, launchAtLogin
     }
 
@@ -156,6 +160,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
             MenuBarSymbol.self, forKey: .menuBarSymbol) ?? .icon
         menuBarTint = try values.decodeIfPresent(
             MenuBarTint.self, forKey: .menuBarTint) ?? .adaptive
+        menuBarShowsDailyChange = try values.decodeIfPresent(
+            Bool.self, forKey: .menuBarShowsDailyChange) ?? false
         privacyEnabled = try values.decodeIfPresent(Bool.self, forKey: .privacyEnabled) ?? false
         privacyShortcut = try values.decodeIfPresent(
             ShortcutSettings.self, forKey: .privacyShortcut) ?? .defaultPrivacy

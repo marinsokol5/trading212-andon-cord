@@ -34,6 +34,24 @@ final class PortfolioBuilderTests: XCTestCase {
         XCTAssertEqual(portfolio.positions[2].sellableWeight, 0)
     }
 
+    func testPositionCarriesWalletUnrealizedProfitLoss() throws {
+        let withPnL = Trading212Position(
+            instrument: Trading212Instrument(ticker: "AAA", name: "AAA", currency: "USD"),
+            quantity: 10, quantityAvailableForTrading: 8, quantityInPies: 2,
+            currentPrice: 100,
+            walletImpact: Trading212WalletImpact(
+                currency: "EUR", currentValue: 100, unrealizedProfitLoss: -12))
+        let portfolio = try CurrentPortfolioBuilder.build(
+            summary: summary,
+            positions: [
+                withPnL,
+                position("BBB", quantity: 4, sellable: 4, pies: 0, currentValue: 100),
+            ], environment: .demo)
+
+        XCTAssertEqual(portfolio.positions[0].unrealizedProfitLoss, -12)
+        XCTAssertNil(portfolio.positions[1].unrealizedProfitLoss)
+    }
+
     func testDuplicateTickerRejected() {
         XCTAssertThrowsError(try CurrentPortfolioBuilder.build(
             summary: summary,
