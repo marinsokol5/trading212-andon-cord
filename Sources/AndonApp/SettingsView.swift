@@ -36,12 +36,16 @@ struct SettingsView: View {
                 ForEach(NumberSeparators.allCases) { Text($0.displayName).tag($0) }
             }
 
+            // Sample data, not the real value — render it even in privacy mode
+            // so formatting stays tunable while values are hidden.
             LabeledContent("Preview") {
                 HStack(spacing: 5) {
-                    Image(systemName: model.isPrivate ? "eye.slash" : "chart.line.uptrend.xyaxis")
-                    Text(model.isPrivate
-                         ? AppModel.hiddenText
-                         : model.privateAmount(49_900.50, currency: "EUR", style: model.settings.valueStyle))
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text(GUIValueFormatter.string(
+                        49_900.50,
+                        currency: "EUR",
+                        style: model.settings.valueStyle,
+                        separators: model.settings.separators))
                         .monospacedDigit()
                 }
             }

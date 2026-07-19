@@ -5,6 +5,20 @@ import XCTest
 final class DailyChangeTests: XCTestCase {
     private let anchor = Date(timeIntervalSince1970: 1_752_900_000)
 
+    /// Fixed calendar so day-boundary tests don't depend on the machine's zone.
+    private let utc: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }()
+
+    private func date(
+        _ year: Int, _ month: Int, _ day: Int, _ hour: Int, _ minute: Int = 0
+    ) -> Date {
+        utc.date(from: DateComponents(
+            year: year, month: month, day: day, hour: hour, minute: minute))!
+    }
+
     private func portfolio(
         accountID: String = "account",
         currency: String = "EUR",
@@ -25,61 +39,74 @@ final class DailyChangeTests: XCTestCase {
         currency: String = "EUR",
         value: Decimal = 100_000,
         unrealizedPnL: Decimal? = nil,
-        age: TimeInterval = 0
+        asOf: Date? = nil
     ) -> DailyBaseline {
         DailyBaseline(
             accountID: accountID, totalValue: value,
             unrealizedProfitLoss: unrealizedPnL, currencyCode: currency,
-            asOf: anchor.addingTimeInterval(-age))
+            asOf: asOf ?? anchor)
     }
 
     // MARK: Rolling
 
     func testNoExistingBaselineAnchorsToCurrent() {
         let current = portfolio(value: 123, unrealizedPnL: 45)
-        let rolled = DailyBaseline.rolled(existing: nil, current: current)
+        let rolled = DailyBaseline.rolled(existing: nil, current: current, calendar: utc)
         XCTAssertEqual(rolled, DailyBaseline(portfolio: current))
         XCTAssertEqual(rolled.totalValue, 123)
         XCTAssertEqual(rolled.unrealizedProfitLoss, 45)
         XCTAssertEqual(rolled.asOf, anchor)
     }
 
-    func testKeepsBaselineWithinWindow() {
-        let existing = baseline(value: 90_000, unrealizedPnL: 1, age: 3600)
+    func testKeepsBaselineFromEarlierSameDay() {
+        let existing = baseline(
+            value: 90_000, unrealizedPnL: 1, asOf: date(2026, 7, 18, 9))
         let rolled = DailyBaseline.rolled(
-            existing: existing, current: portfolio(unrealizedPnL: 2))
+            existing: existing,
+            current: portfolio(unrealizedPnL: 2, capturedAt: date(2026, 7, 18, 22, 30)),
+            calendar: utc)
         XCTAssertEqual(rolled, existing)
     }
 
-    func testReanchorsOncePastWindow() {
-        let existing = baseline(value: 90_000, age: 25 * 3600)
-        let current = portfolio()
+    func testReanchorsOnNewCalendarDayEvenWithin24Hours() {
+        // Laptop closed at 23:00, opened 09:00 next morning — only 10h apart,
+        // but a new day starts a fresh baseline.
+        let existing = baseline(value: 90_000, asOf: date(2026, 7, 18, 23))
+        let current = portfolio(capturedAt: date(2026, 7, 19, 9))
         XCTAssertEqual(
-            DailyBaseline.rolled(existing: existing, current: current),
+            DailyBaseline.rolled(existing: existing, current: current, calendar: utc),
+            DailyBaseline(portfolio: current))
+    }
+
+    func testReanchorsAfterSkippedDays() {
+        let existing = baseline(value: 90_000, asOf: date(2026, 7, 15, 12))
+        let current = portfolio(capturedAt: date(2026, 7, 18, 9))
+        XCTAssertEqual(
+            DailyBaseline.rolled(existing: existing, current: current, calendar: utc),
             DailyBaseline(portfolio: current))
     }
 
     func testReanchorsOnCurrencyChange() {
-        let existing = baseline(currency: "USD", age: 3600)
+        let existing = baseline(currency: "USD")
         let current = portfolio(currency: "EUR")
         XCTAssertEqual(
-            DailyBaseline.rolled(existing: existing, current: current),
+            DailyBaseline.rolled(existing: existing, current: current, calendar: utc),
             DailyBaseline(portfolio: current))
     }
 
     func testReanchorsOnAccountChange() {
-        let existing = baseline(accountID: "old", age: 3600)
+        let existing = baseline(accountID: "old")
         let current = portfolio(accountID: "new")
         XCTAssertEqual(
-            DailyBaseline.rolled(existing: existing, current: current),
+            DailyBaseline.rolled(existing: existing, current: current, calendar: utc),
             DailyBaseline(portfolio: current))
     }
 
     func testReanchorsWhenPnLAvailabilityFlips() {
-        let existing = baseline(unrealizedPnL: nil, age: 3600)
+        let existing = baseline(unrealizedPnL: nil)
         let current = portfolio(unrealizedPnL: 500)
         XCTAssertEqual(
-            DailyBaseline.rolled(existing: existing, current: current),
+            DailyBaseline.rolled(existing: existing, current: current, calendar: utc),
             DailyBaseline(portfolio: current))
     }
 

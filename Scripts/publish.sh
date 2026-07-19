@@ -80,4 +80,17 @@ if ! git -C "$TAP_DIR" diff --cached --quiet; then
 fi
 git -C "$TAP_DIR" push origin HEAD
 
-echo "==> published $TAG; upgrade with: brew upgrade --cask marinsokol5/tap/trading212-andon-cord"
+echo "==> published $TAG"
+
+echo "==> upgrading local install"
+brew upgrade -y --cask marinsokol5/tap/trading212-andon-cord
+
+echo "==> restarting Trading212 Andon Cord"
+if pgrep -xq "Trading212 Andon Cord"; then
+  osascript -e 'quit app "Trading212 Andon Cord"'
+  for _ in {1..20}; do
+    pgrep -xq "Trading212 Andon Cord" || break
+    sleep 0.25
+  done
+fi
+open -a "Trading212 Andon Cord"

@@ -38,6 +38,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         withObservationTracking {
             _ = model.menuBarValue
             _ = model.isPrivate
+            _ = model.dailyChange
             _ = model.settings.menuBarLayout
             _ = model.settings.menuBarSymbol
             _ = model.settings.menuBarTint
@@ -62,7 +63,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             privateMode: privateMode,
             layout: model.settings.menuBarLayout,
             symbol: model.settings.menuBarSymbol,
-            tint: model.settings.menuBarTint)
+            tint: model.settings.menuBarTint,
+            trendDown: model.dailyChange?.isDown == true)
         button.image = image
         button.title = ""
         button.setAccessibilityLabel("Trading212 Andon Cord")

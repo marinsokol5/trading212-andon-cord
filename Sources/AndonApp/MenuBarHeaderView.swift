@@ -28,15 +28,15 @@ struct MenuBarHeaderView: View {
                         style: .fullWithCents))
                         .font(.system(size: 26, weight: .semibold, design: .rounded))
                         .monospacedDigit()
+                    if let change = model.dailyChange {
+                        DailyChangeLabel(change: change, model: model)
+                            .font(.caption)
+                    }
                     if model.isPrivate {
                         Label("Portfolio value hidden", systemImage: "eye.slash")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        if let change = model.dailyChange {
-                            DailyChangeLabel(change: change, model: model)
-                                .font(.caption)
-                        }
                         HStack(spacing: 4) {
                             Text("Cash \(model.privateAmount(snapshot.freeCash, currency: snapshot.currencyCode, style: .fullWithCents))")
                             Text("·")

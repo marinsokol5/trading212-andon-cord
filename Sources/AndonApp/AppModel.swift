@@ -78,7 +78,7 @@ final class AppModel {
         currentPortfolio.map { AccountSnapshot(portfolio: $0) }
     }
 
-    /// Change since the rolling ~24h anchor; nil until a baseline exists.
+    /// Change since today's first reading; nil until a baseline exists.
     var dailyChange: DailyChange? {
         guard let currentPortfolio, let dailyBaseline else { return nil }
         return DailyChange.between(baseline: dailyBaseline, current: currentPortfolio)
@@ -332,16 +332,19 @@ final class AppModel {
             separators: settings.separators)
     }
 
-    /// `+€1,300.00 (+1.31%)`. The percentage also reveals the trend, so
-    /// privacy mode hides the whole string, not just the amount.
+    /// `+€1,300.00 (+1.31%)`; in privacy mode just `+1.31%` — the relative
+    /// move stays readable while every absolute amount stays hidden.
     func changeDescription(_ change: DailyChange) -> String {
-        guard !isPrivate else { return Self.hiddenText }
+        let percent = change.fraction.map {
+            CurrencyDisplay.percentString($0, separators: settings.separators)
+        }
+        if isPrivate { return percent ?? Self.hiddenText }
         let amount = CurrencyDisplay.signedString(
             change.absolute,
             currencyCode: change.currencyCode,
             separators: settings.separators)
-        guard let fraction = change.fraction else { return amount }
-        return "\(amount) (\(CurrencyDisplay.percentString(fraction, separators: settings.separators)))"
+        guard let percent else { return amount }
+        return "\(amount) (\(percent))"
     }
 
     private func recordBaseline(_ portfolio: CurrentPortfolio) {

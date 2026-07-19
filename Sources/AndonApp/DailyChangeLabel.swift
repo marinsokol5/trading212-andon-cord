@@ -2,8 +2,9 @@ import SwiftUI
 import Trading212Core
 
 /// One-line daily change readout: `↗ +€620.47 (+1.29%) · since 9:41`.
-/// Shared by the status-menu header and the Portfolio hero. Callers skip it
-/// entirely in privacy mode — the tint and arrow alone would reveal the trend.
+/// Shared by the status-menu header and the Portfolio hero. In privacy mode
+/// the description drops to the percentage alone — deliberately: the relative
+/// move stays useful while absolute amounts stay hidden.
 struct DailyChangeLabel: View {
     let change: DailyChange
     let model: AppModel

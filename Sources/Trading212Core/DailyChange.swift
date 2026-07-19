@@ -1,12 +1,9 @@
 import Foundation
 
-/// The rolling anchor a "daily change" figure is measured *from*: one saved
-/// portfolio reading, kept until it ages past the window (~24h) or stops being
-/// comparable, then re-anchored to the next reading.
+/// The anchor a "daily change" figure is measured *from*: the first comparable
+/// portfolio reading of the local calendar day, kept until the day rolls over
+/// or it stops being comparable, then re-anchored to the next reading.
 public struct DailyBaseline: Codable, Equatable, Sendable {
-    /// The window after which the anchor rolls forward to the current reading.
-    public static let window: TimeInterval = 24 * 60 * 60
-
     public let accountID: String
     public let totalValue: Decimal
     /// Open-position P/L at the anchor. When both the anchor and the current
@@ -41,18 +38,21 @@ public struct DailyBaseline: Codable, Equatable, Sendable {
 
     /// Keeps `existing` only while it stays comparable to `current`: same
     /// account and currency, unchanged P/L availability (a flip would switch
-    /// the change basis mid-window), and younger than `window`. Anything else
-    /// re-anchors to the current reading.
+    /// the change basis mid-day), and anchored on the same calendar day as the
+    /// current reading. Anything else re-anchors to the current reading — the
+    /// first fetch after midnight starts a fresh day even when the previous
+    /// anchor is less than 24 hours old, and days with the laptop closed are
+    /// simply skipped over.
     public static func rolled(
         existing: DailyBaseline?,
         current: CurrentPortfolio,
-        window: TimeInterval = DailyBaseline.window
+        calendar: Calendar = .current
     ) -> DailyBaseline {
         if let existing,
            existing.accountID == current.account.id,
            existing.currencyCode == current.account.currency,
            (existing.unrealizedProfitLoss == nil) == (current.unrealizedProfitLoss == nil),
-           current.capturedAt.timeIntervalSince(existing.asOf) < window {
+           calendar.isDate(existing.asOf, inSameDayAs: current.capturedAt) {
             return existing
         }
         return DailyBaseline(portfolio: current)

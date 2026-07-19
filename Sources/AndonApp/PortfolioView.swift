@@ -94,7 +94,7 @@ struct PortfolioView: View {
                         .accessibilityLabel(model.isPrivate
                             ? "Value hidden"
                             : model.privateAmount(snapshot.totalValue, currency: snapshot.currencyCode, style: .fullWithCents))
-                    if !model.isPrivate, let change = model.dailyChange {
+                    if let change = model.dailyChange {
                         DailyChangeLabel(change: change, model: model)
                             .font(.callout)
                     }
@@ -114,7 +114,7 @@ struct PortfolioView: View {
                             title: "Unrealized P/L",
                             value: model.privateAmount(pnl, currency: snapshot.currencyCode, style: .fullWithCents),
                             symbol: pnl < 0 ? "arrow.down.right" : "arrow.up.right",
-                            tint: model.isPrivate ? nil : (pnl < 0 ? Theme.danger : Theme.success))
+                            tint: pnl < 0 ? Theme.danger : Theme.success)
                     }
                     MetricCard(
                         title: "Updated",

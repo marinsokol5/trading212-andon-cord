@@ -5,12 +5,16 @@ enum MenuBarRenderer {
     /// Text drawn for `MenuBarSymbol.label` — the "T212 label" picker option.
     private static let labelText = "T212" as NSString
 
+    /// `trendDown` mirrors the trend mark vertically so the bar never shows a
+    /// rising arrow on a down day; `.t212` (brand chevron) and `.label` are
+    /// direction-agnostic and ignore it.
     static func image(
         value: String,
         privateMode: Bool,
         layout: MenuBarLayout,
         symbol: MenuBarSymbol,
-        tint: MenuBarTint
+        tint: MenuBarTint,
+        trendDown: Bool
     ) -> NSImage {
         let height = NSStatusBar.system.thickness
         let foreground: NSColor = tint == .adaptive ? .black : .white
@@ -20,6 +24,7 @@ enum MenuBarRenderer {
                 value: value,
                 privateMode: privateMode,
                 symbol: symbol,
+                trendDown: trendDown,
                 height: height,
                 foreground: foreground)
         case .inline:
@@ -27,6 +32,7 @@ enum MenuBarRenderer {
                 value: value,
                 privateMode: privateMode,
                 symbol: symbol,
+                trendDown: trendDown,
                 height: height,
                 foreground: foreground)
         }
@@ -38,6 +44,7 @@ enum MenuBarRenderer {
         value: String,
         privateMode: Bool,
         symbol: MenuBarSymbol,
+        trendDown: Bool,
         height: CGFloat,
         foreground: NSColor
     ) -> NSImage {
@@ -60,7 +67,8 @@ enum MenuBarRenderer {
         return NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
             let topRect = NSRect(x: (rect.width - topWidth) / 2, y: rect.height - 11,
                                  width: topWidth, height: 10)
-            drawSymbol(symbol, in: topRect, attributes: labelAttributes, color: foreground)
+            drawSymbol(symbol, in: topRect, attributes: labelAttributes,
+                       color: foreground, trendDown: trendDown)
             if privateMode {
                 drawEyeSlash(
                     in: NSRect(x: (rect.width - 13) / 2, y: 1.5, width: 13, height: 9),
@@ -78,6 +86,7 @@ enum MenuBarRenderer {
         value: String,
         privateMode: Bool,
         symbol: MenuBarSymbol,
+        trendDown: Bool,
         height: CGFloat,
         foreground: NSColor
     ) -> NSImage {
@@ -101,7 +110,8 @@ enum MenuBarRenderer {
                 symbol,
                 in: NSRect(x: startX, y: (rect.height - 14) / 2, width: glyphWidth, height: 14),
                 attributes: labelAttributes,
-                color: foreground)
+                color: foreground,
+                trendDown: trendDown)
             if privateMode {
                 drawEyeSlash(
                     in: NSRect(x: startX + glyphWidth + gap,
@@ -124,11 +134,12 @@ enum MenuBarRenderer {
         _ symbol: MenuBarSymbol,
         in rect: NSRect,
         attributes: [NSAttributedString.Key: Any],
-        color: NSColor
+        color: NSColor,
+        trendDown: Bool
     ) {
         switch symbol {
         case .icon:
-            drawMark(in: rect, color: color)
+            drawMark(in: rect, color: color, down: trendDown)
         case .t212:
             drawT212Mark(in: rect, color: color)
         case .label:
@@ -181,11 +192,12 @@ enum MenuBarRenderer {
         chevron.stroke()
     }
 
-    /// Small monochrome rising stock line capped with an arrowhead at its peak —
-    /// the same trend mark InvestingBar draws for its menu bar, with its exact
+    /// Small monochrome stock line capped with an arrowhead at its end — the
+    /// same trend mark InvestingBar draws for its menu bar, with its exact
     /// proportions (10% inset, 0.11 stroke, 0.30 barbs). Drawn into the largest
-    /// centered square of `rect` so neither layout squashes the climb.
-    private static func drawMark(in rect: NSRect, color: NSColor) {
+    /// centered square of `rect` so neither layout squashes the slope; `down`
+    /// mirrors it vertically so the arrow falls on a down day.
+    private static func drawMark(in rect: NSRect, color: NSColor, down: Bool) {
         let side = min(rect.width, rect.height)
         let box = NSRect(x: rect.midX - side / 2, y: rect.midY - side / 2,
                          width: side, height: side)
@@ -197,7 +209,7 @@ enum MenuBarRenderer {
         ]
         let points = normalized.map {
             NSPoint(x: area.minX + $0.x * area.width,
-                    y: area.minY + $0.y * area.height)
+                    y: area.minY + (down ? 1 - $0.y : $0.y) * area.height)
         }
 
         let path = NSBezierPath()
