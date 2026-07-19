@@ -53,6 +53,33 @@ extension Color {
     }
 }
 
+/// Miniature of the app icon — yellow tile, dark collar, red stop button —
+/// for in-app identity marks (sidebar brand, status-menu header). The literal
+/// icon palette lives here, not in the semantic roles above: red still means
+/// LIVE/destructive everywhere else.
+struct BrandMark: View {
+    var size: CGFloat = 28
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.24)
+            .fill(LinearGradient(
+                colors: [Color(hex: "#ffd23f"), Color(hex: "#f0a400")],
+                startPoint: .top, endPoint: .bottom))
+            .overlay(
+                Circle()
+                    .fill(Color(hex: "#262b34"))
+                    .padding(size * 0.11))
+            .overlay(
+                Circle()
+                    .fill(LinearGradient(
+                        colors: [Color(hex: "#ff6b5e"), Color(hex: "#c9182b")],
+                        startPoint: .top, endPoint: .bottom))
+                    .padding(size * 0.20))
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
 /// Per-screen title block: H1, optional subtitle, optional trailing actions.
 struct ScreenHeader<Trailing: View>: View {
     let title: String

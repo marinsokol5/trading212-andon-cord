@@ -2,9 +2,9 @@ import AppKit
 import SwiftUI
 import Trading212Core
 
-/// The **Display** screen: value formatting, menu-bar appearance, privacy,
+/// The **Settings** screen: value formatting, menu-bar appearance, privacy,
 /// refresh cadence, and launch-at-login.
-struct DisplayView: View {
+struct SettingsView: View {
     @Bindable var model: AppModel
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -12,7 +12,7 @@ struct DisplayView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScreenHeader(
-                "Display",
+                "Settings",
                 subtitle: "Formatting, menu bar, privacy, and behavior.")
 
             Form {
@@ -38,7 +38,7 @@ struct DisplayView: View {
 
             LabeledContent("Preview") {
                 HStack(spacing: 5) {
-                    Image(systemName: model.isPrivate ? "eye.slash" : "light.beacon.max.fill")
+                    Image(systemName: model.isPrivate ? "eye.slash" : "chart.line.uptrend.xyaxis")
                     Text(model.isPrivate
                          ? AppModel.hiddenText
                          : model.privateAmount(49_900.50, currency: "EUR", style: model.settings.valueStyle))

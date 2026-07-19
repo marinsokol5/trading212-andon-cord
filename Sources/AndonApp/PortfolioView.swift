@@ -94,6 +94,10 @@ struct PortfolioView: View {
                         .accessibilityLabel(model.isPrivate
                             ? "Value hidden"
                             : model.privateAmount(snapshot.totalValue, currency: snapshot.currencyCode, style: .fullWithCents))
+                    if !model.isPrivate, let change = model.dailyChange {
+                        DailyChangeLabel(change: change, model: model)
+                            .font(.callout)
+                    }
                 }
 
                 HStack(spacing: 12) {

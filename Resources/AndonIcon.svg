@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Andon app icon">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff6b4a"/>
-      <stop offset="1" stop-color="#c92635"/>
+      <stop offset="0" stop-color="#ffd23f"/>
+      <stop offset="1" stop-color="#f0a400"/>
+    </linearGradient>
+    <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6b5e"/>
+      <stop offset="1" stop-color="#c9182b"/>
     </linearGradient>
   </defs>
   <rect x="78" y="78" width="868" height="868" rx="212" fill="url(#bg)"/>
-  <path d="M325 680V440c0-103 84-187 187-187s187 84 187 187v240" fill="none" stroke="#fff" stroke-width="78" stroke-linecap="round"/>
-  <path d="M256 694h512" fill="none" stroke="#fff" stroke-width="78" stroke-linecap="round"/>
-  <circle cx="512" cy="454" r="55" fill="#fff"/>
+  <circle cx="512" cy="512" r="338" fill="#262b34"/>
+  <circle cx="512" cy="512" r="258" fill="url(#btn)"/>
+  <path d="M 366 434 A 210 210 0 0 1 658 434" stroke="#ffffff" stroke-opacity="0.5" stroke-width="44" fill="none" stroke-linecap="round"/>
 </svg>

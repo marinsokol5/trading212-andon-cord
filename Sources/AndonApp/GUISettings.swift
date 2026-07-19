@@ -35,7 +35,13 @@ extension Trading212Core.MenuBarLayout {
 }
 
 extension Trading212Core.MenuBarSymbol {
-    var displayName: String { self == .icon ? "Andon cord mark" : "T212 label" }
+    var displayName: String {
+        switch self {
+        case .icon: "Trend mark"
+        case .t212: "Trading 212 mark"
+        case .label: "T212 label"
+        }
+    }
 }
 
 extension Trading212Core.MenuBarTint {

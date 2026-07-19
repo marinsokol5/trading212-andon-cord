@@ -53,8 +53,9 @@ make screenshots                # fixture data → screenshots/fixture/{light,da
 make screenshots-real           # --real: the user's saved key + one live fetch
 ```
 
-- Every sidebar route is captured in light and dark, plus the menu-bar popover
-  and a privacy-mode portfolio shot. Implementation: `ScreenshotHarness.swift`
+- Every sidebar route is captured in light and dark, plus the status-item
+  menu's header view and a privacy-mode portfolio shot. Implementation:
+  `ScreenshotHarness.swift`
   (offscreen `NSHostingView` render; no window ever appears).
 - Fixture mode is deterministic and safe: in-memory stores, stub credentials,
   no Keychain/network/workspace access. Run it freely.

@@ -4,13 +4,14 @@ import SwiftUI
 import Trading212Core
 
 @MainActor
-final class StatusBarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
+final class StatusBarController: NSObject, NSMenuDelegate {
     private let model: AppModel
     private let openApp: () -> Void
     private let openSettings: () -> Void
     private let statusItem: NSStatusItem
-    private let popover = NSPopover()
-    private let contextMenu = NSMenu()
+    private let menu = NSMenu()
+    private var refreshItem: NSMenuItem?
+    private var privacyItem: NSMenuItem?
 
     init(model: AppModel, openApp: @escaping () -> Void, openSettings: @escaping () -> Void) {
         self.model = model
@@ -21,22 +22,15 @@ final class StatusBarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
 
         statusItem.autosaveName = "\(AppVariant.current.bundleIdentifier).status"
         if let button = statusItem.button {
-            button.target = self
-            button.action = #selector(statusItemClicked)
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.imagePosition = .imageOnly
             button.imageScaling = .scaleNone
         }
 
-        popover.behavior = .transient
-        popover.animates = true
-        popover.delegate = self
-        popover.contentViewController = NSHostingController(rootView: PortfolioPopoverView(
-            model: model,
-            openApp: { [weak self] in self?.closeAndOpenApp() },
-            openSettings: { [weak self] in self?.closeAndOpenSettings() }))
-
-        contextMenu.delegate = self
+        // Explicit isEnabled below; auto-enable would override the manual
+        // Refresh-in-flight disabling.
+        menu.autoenablesItems = false
+        menu.delegate = self
+        statusItem.menu = menu
         observe()
     }
 
@@ -49,7 +43,14 @@ final class StatusBarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
             _ = model.settings.menuBarTint
             render()
         } onChange: { [weak self] in
-            Task { @MainActor in self?.observe() }
+            // Not a MainActor Task: those queue on the main dispatch queue,
+            // which is not drained while menu tracking holds the run loop in
+            // .eventTracking — the icon would freeze until the menu closed.
+            // A common-modes run loop block executes during tracking too.
+            CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue) {
+                MainActor.assumeIsolated { self?.observe() }
+            }
+            CFRunLoopWakeUp(CFRunLoopGetMain())
         }
     }
 
@@ -67,101 +68,76 @@ final class StatusBarController: NSObject, NSMenuDelegate, NSPopoverDelegate {
         statusItem.length = image.size.width + 6
         button.setAccessibilityLabel("Trading212 Andon Cord")
         button.setAccessibilityValue(privateMode ? "Portfolio value hidden" : model.menuBarValue)
+
+        // The menu rebuilds on every open; these keep an already-open menu
+        // current when privacy toggles via the global shortcut or a refresh
+        // lands while it is showing.
+        privacyItem?.title = model.isPrivate ? "Show Portfolio Values" : "Hide Portfolio Values"
+        privacyItem?.image = NSImage(
+            systemSymbolName: model.isPrivate ? "eye" : "eye.slash",
+            accessibilityDescription: nil)
+        refreshItem?.isEnabled = model.hasReadCredential && !model.isRefreshing
     }
 
-    @objc private func statusItemClicked() {
-        guard let event = NSApp.currentEvent else { return }
-        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
-            showContextMenu()
-        } else {
-            togglePopover()
-        }
+    func menuWillOpen(_ menu: NSMenu) {
+        model.pausePrivacyShortcut()
     }
 
-    private func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        }
-    }
-
-    private func showContextMenu() {
-        guard let button = statusItem.button else { return }
-        menuNeedsUpdate(contextMenu)
-        contextMenu.popUp(
-            positioning: nil,
-            at: NSPoint(x: 0, y: button.bounds.minY - 2),
-            in: button)
+    func menuDidClose(_ menu: NSMenu) {
+        model.resumePrivacyShortcut()
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        if let snapshot = model.displaySnapshot {
-            addInfo(
-                model.isPrivate
-                    ? "Portfolio value hidden"
-                    : model.privateAmount(snapshot.totalValue, currency: snapshot.currencyCode, style: .fullWithCents),
-                to: menu)
-            addInfo("Updated \(snapshot.asOf.formatted(date: .omitted, time: .shortened))", to: menu, caption: true)
-        } else {
-            addInfo(model.hasReadCredential ? "Portfolio unavailable" : "Viewing key not configured", to: menu)
-        }
-        if let error = model.errorMessage { addInfo(error, to: menu, caption: true) }
+
+        let header = NSMenuItem()
+        header.isEnabled = false
+        let hosting = NSHostingView(rootView: MenuBarHeaderView(model: model))
+        hosting.frame.size = hosting.fittingSize
+        header.view = hosting
+        menu.addItem(header)
 
         menu.addItem(.separator())
-        addAction("Open Trading212 Andon Cord", selector: #selector(openAppAction), key: "o", to: menu)
-        addAction("Refresh Now", selector: #selector(refreshAction), key: "r", to: menu,
-                  enabled: model.hasReadCredential && !model.isRefreshing)
-        addAction(
+        refreshItem = addAction("Refresh Now", symbol: "arrow.clockwise",
+                                selector: #selector(refreshAction), key: "r",
+                                enabled: model.hasReadCredential && !model.isRefreshing)
+        let privacyKey = model.settings.privacyShortcut.menuKeyEquivalent
+        privacyItem = addAction(
             model.isPrivate ? "Show Portfolio Values" : "Hide Portfolio Values",
+            symbol: model.isPrivate ? "eye" : "eye.slash",
             selector: #selector(togglePrivacyAction),
-            key: "h",
-            to: menu,
-            image: symbol(model.isPrivate ? "eye" : "eye.slash"))
+            key: privacyKey?.key ?? "",
+            mask: privacyKey?.mask ?? [])
         menu.addItem(.separator())
-        addAction("Settings…", selector: #selector(openSettingsAction), key: ",", to: menu)
-        addAction("Quit Trading212 Andon Cord", selector: #selector(quitAction), key: "q", to: menu)
+        addAction("Open Trading212 Andon Cord", symbol: "macwindow",
+                  selector: #selector(openAppAction), key: "o")
+        addAction("Settings…", symbol: "gearshape",
+                  selector: #selector(openSettingsAction), key: ",")
+        menu.addItem(.separator())
+        addAction("Quit Trading212 Andon Cord", symbol: "power",
+                  selector: #selector(quitAction), key: "q")
     }
 
-    private func addInfo(_ title: String, to menu: NSMenu, caption: Bool = false) {
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        item.isEnabled = false
-        if caption {
-            item.attributedTitle = NSAttributedString(string: title, attributes: [
-                .font: NSFont.menuFont(ofSize: NSFont.smallSystemFontSize),
-                .foregroundColor: NSColor.secondaryLabelColor,
-            ])
-        }
-        menu.addItem(item)
-    }
-
+    @discardableResult
     private func addAction(
         _ title: String,
+        symbol: String,
         selector: Selector,
         key: String,
-        to menu: NSMenu,
-        enabled: Bool = true,
-        image: NSImage? = nil
-    ) {
+        mask: NSEvent.ModifierFlags = .command,
+        enabled: Bool = true
+    ) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: selector, keyEquivalent: key)
         item.target = self
-        item.keyEquivalentModifierMask = .command
+        item.keyEquivalentModifierMask = mask
         item.isEnabled = enabled
-        item.image = image
+        item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
         menu.addItem(item)
+        return item
     }
 
-    private func symbol(_ name: String) -> NSImage? {
-        NSImage(systemSymbolName: name, accessibilityDescription: nil)
-    }
-
-    private func closeAndOpenApp() { popover.performClose(nil); openApp() }
-    private func closeAndOpenSettings() { popover.performClose(nil); openSettings() }
-
-    @objc private func openAppAction() { closeAndOpenApp() }
-    @objc private func openSettingsAction() { closeAndOpenSettings() }
+    @objc private func openAppAction() { openApp() }
+    @objc private func openSettingsAction() { openSettings() }
     @objc private func refreshAction() { Task { await model.refresh() } }
     @objc private func togglePrivacyAction() { model.togglePrivacy() }
     @objc private func quitAction() { NSApp.terminate(nil) }

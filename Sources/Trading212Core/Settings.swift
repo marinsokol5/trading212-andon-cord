@@ -64,9 +64,16 @@ public enum MenuBarLayout: String, Codable, CaseIterable, Identifiable, Sendable
 
 public enum MenuBarSymbol: String, Codable, CaseIterable, Identifiable, Sendable {
     case icon
+    case t212
     case label
     public var id: String { rawValue }
-    public var displayName: String { self == .icon ? "Icon" : "Label" }
+    public var displayName: String {
+        switch self {
+        case .icon: "Icon"
+        case .t212: "Trading 212"
+        case .label: "Label"
+        }
+    }
 }
 
 public enum MenuBarTint: String, Codable, CaseIterable, Identifiable, Sendable {

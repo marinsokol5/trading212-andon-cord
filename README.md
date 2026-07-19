@@ -77,21 +77,21 @@ release values before publishing under another owner.
    install always uses Live, a development build always uses Demo — so create
    the key on the matching side of Trading 212. Trading212 Andon Cord exercises the read
    endpoints before it replaces a working Keychain value.
-3. On the **Display** screen, choose refresh cadence and menu-bar
+3. On the **Settings** screen, choose refresh cadence and menu-bar
    layout/formatting, and optionally enable Launch at Login.
 
 The window is organized as sidebar routes: **Account** (the build's fixed environment and keys),
 **Portfolio** (value and key metrics), **Positions** (sortable table with the
 sellable/pie split), **Snapshots** (read-only browser of CLI snapshot files),
-**Display**, and **About**.
+and **Settings**.
 
 The value appears from the last good cache immediately at future launches, then
 refreshes in the background. A transient failure leaves that last value on
 screen and shows a freshness warning. HTTP 429 responses use bounded
 exponential backoff and the broker's retry/reset headers.
 
-Privacy mode hides financial values in every route, the Display preview,
-positions, snapshots, popover, menu, and menu-bar item. Toggle it from any surface or with the global
+Privacy mode hides financial values in every route, the Settings preview,
+positions, snapshots, the status-item menu, and menu-bar item. Toggle it from any surface or with the global
 shortcut, which defaults to **Command–Option–P** and is configurable. The
 shortcut uses the macOS Carbon hot-key API and does not require Accessibility
 permission. Privacy does not alter explicit terminal output or exported files.

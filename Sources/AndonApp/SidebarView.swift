@@ -39,14 +39,7 @@ struct SidebarView: View {
 
     private var brand: some View {
         HStack(spacing: 9) {
-            RoundedRectangle(cornerRadius: 7)
-                .fill(Theme.danger)
-                .frame(width: 28, height: 28)
-                .overlay(
-                    Image(systemName: "light.beacon.max.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white))
-                .accessibilityHidden(true)
+            BrandMark(size: 28)
             VStack(alignment: .leading, spacing: 0) {
                 Text("Andon Cord")
                     .font(.system(size: 19, weight: .heavy))

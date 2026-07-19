@@ -26,10 +26,8 @@ struct RootView: View {
             PositionsView(model: model)
         case .snapshots:
             SnapshotsView(model: model)
-        case .display:
-            DisplayView(model: model)
-        case .about:
-            AboutView(model: model)
+        case .settings:
+            SettingsView(model: model)
         }
     }
 }

@@ -51,8 +51,8 @@ struct RenderAndonIcon {
             context.addPath(path)
             context.clip()
             let colors = [
-                CGColor(srgbRed: 1.0, green: 0.42, blue: 0.29, alpha: 1),
-                CGColor(srgbRed: 0.79, green: 0.09, blue: 0.20, alpha: 1),
+                CGColor(srgbRed: 1.0, green: 0.824, blue: 0.247, alpha: 1),
+                CGColor(srgbRed: 0.941, green: 0.643, blue: 0.0, alpha: 1),
             ] as CFArray
             let gradient = CGGradient(
                 colorsSpace: CGColorSpaceCreateDeviceRGB(),
@@ -65,27 +65,44 @@ struct RenderAndonIcon {
                 options: [])
             context.restoreGState()
 
-            context.setStrokeColor(CGColor(gray: 1, alpha: 1))
-            context.setLineWidth(size * 0.072)
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            let collarRadius = size * 0.330
+            context.setFillColor(CGColor(srgbRed: 0.149, green: 0.169, blue: 0.204, alpha: 1))
+            context.fillEllipse(in: CGRect(
+                x: center.x - collarRadius, y: center.y - collarRadius,
+                width: collarRadius * 2, height: collarRadius * 2))
+
+            let buttonRadius = size * 0.252
+            context.saveGState()
+            context.addEllipse(in: CGRect(
+                x: center.x - buttonRadius, y: center.y - buttonRadius,
+                width: buttonRadius * 2, height: buttonRadius * 2))
+            context.clip()
+            let buttonColors = [
+                CGColor(srgbRed: 1.0, green: 0.420, blue: 0.369, alpha: 1),
+                CGColor(srgbRed: 0.788, green: 0.094, blue: 0.169, alpha: 1),
+            ] as CFArray
+            let buttonGradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: buttonColors,
+                locations: [0, 1])!
+            context.drawLinearGradient(
+                buttonGradient,
+                start: CGPoint(x: center.x, y: center.y + buttonRadius),
+                end: CGPoint(x: center.x, y: center.y - buttonRadius),
+                options: [])
+            context.restoreGState()
+
+            context.setStrokeColor(CGColor(gray: 1, alpha: 0.5))
+            context.setLineWidth(size * 0.043)
             context.setLineCap(.round)
             context.addArc(
-                center: CGPoint(x: rect.midX, y: size * 0.55),
-                radius: size * 0.19,
-                startAngle: 0,
-                endAngle: .pi,
+                center: CGPoint(x: rect.midX, y: size * 0.4288),
+                radius: size * 0.2051,
+                startAngle: 0.8020,
+                endAngle: 2.3396,
                 clockwise: false)
-            context.move(to: CGPoint(x: size * 0.31, y: size * 0.55))
-            context.addLine(to: CGPoint(x: size * 0.31, y: size * 0.33))
-            context.move(to: CGPoint(x: size * 0.69, y: size * 0.55))
-            context.addLine(to: CGPoint(x: size * 0.69, y: size * 0.33))
-            context.move(to: CGPoint(x: size * 0.25, y: size * 0.31))
-            context.addLine(to: CGPoint(x: size * 0.75, y: size * 0.31))
             context.strokePath()
-
-            context.setFillColor(CGColor(gray: 1, alpha: 1))
-            context.fillEllipse(in: CGRect(
-                x: size * 0.45, y: size * 0.50,
-                width: size * 0.10, height: size * 0.10))
             return true
         }
     }

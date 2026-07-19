@@ -9,8 +9,7 @@ enum AppRoute: String, CaseIterable, Identifiable, Hashable {
     case portfolio
     case positions
     case snapshots
-    case display
-    case about
+    case settings
 
     var id: String { rawValue }
 
@@ -20,8 +19,7 @@ enum AppRoute: String, CaseIterable, Identifiable, Hashable {
         case .portfolio: "Portfolio"
         case .positions: "Positions"
         case .snapshots: "Snapshots"
-        case .display: "Display"
-        case .about: "About"
+        case .settings: "Settings"
         }
     }
 
@@ -31,8 +29,7 @@ enum AppRoute: String, CaseIterable, Identifiable, Hashable {
         case .portfolio: "chart.pie.fill"
         case .positions: "list.bullet.rectangle.fill"
         case .snapshots: "square.stack.3d.up.fill"
-        case .display: "slider.horizontal.3"
-        case .about: "info.circle.fill"
+        case .settings: "gearshape.fill"
         }
     }
 }
@@ -47,6 +44,7 @@ final class AppModel {
     private(set) var activeRoute: AppRoute = .account
 
     private(set) var currentPortfolio: CurrentPortfolio?
+    private(set) var dailyBaseline: DailyBaseline?
     private(set) var isRefreshing = false
     private(set) var errorMessage: String?
     private(set) var hasReadCredential = false
@@ -56,6 +54,7 @@ final class AppModel {
 
     private let credentialStore: any CredentialStore
     private let snapshotCache: any SnapshotCache
+    private let baselineStore: any DailyBaselineStore
     private let makeProvider: @Sendable (
         Trading212Environment,
         Trading212Credentials
@@ -79,6 +78,12 @@ final class AppModel {
         currentPortfolio.map { AccountSnapshot(portfolio: $0) }
     }
 
+    /// Change since the rolling ~24h anchor; nil until a baseline exists.
+    var dailyChange: DailyChange? {
+        guard let currentPortfolio, let dailyBaseline else { return nil }
+        return DailyChange.between(baseline: dailyBaseline, current: currentPortfolio)
+    }
+
     var menuBarValue: String {
         if isPrivate, displaySnapshot != nil { return Self.hiddenText }
         if let snapshot = displaySnapshot {
@@ -96,6 +101,7 @@ final class AppModel {
         settings: GUISettings = GUISettings(),
         credentialStore: any CredentialStore = KeychainCredentialStore(),
         snapshotCache: (any SnapshotCache)? = nil,
+        baselineStore: (any DailyBaselineStore)? = nil,
         minimumRefreshInterval: TimeInterval = 5,
         makeProvider: @escaping @Sendable (
             Trading212Environment,
@@ -110,6 +116,7 @@ final class AppModel {
         self.settings = settings
         self.credentialStore = credentialStore
         self.snapshotCache = snapshotCache ?? Self.makeFileCache()
+        self.baselineStore = baselineStore ?? Self.makeBaselineStore()
         self.minimumRefreshInterval = minimumRefreshInterval
         self.makeProvider = makeProvider
         self.currentPortfolio = nil
@@ -136,6 +143,7 @@ final class AppModel {
         guard !hasStarted else { return }
         hasStarted = true
         currentPortfolio = snapshotCache.portfolio(for: environment)
+        dailyBaseline = baselineStore.baseline(for: environment)
         updateCredentialPresence()
         await refreshCredentialStatusFromCLI()
         await refresh(force: true)
@@ -180,6 +188,7 @@ final class AppModel {
             guard requestedGeneration == stateGeneration,
                   requestedEnvironment == environment else { return }
             currentPortfolio = portfolio
+            recordBaseline(portfolio)
             settings.setReadCredentialConfigured(
                 true,
                 for: environment,
@@ -239,6 +248,7 @@ final class AppModel {
         hasReadCredential = true
         readKeyHint = Self.keyHint(candidate.key)
         currentPortfolio = portfolio
+        recordBaseline(portfolio)
         settings.setReadCredentialConfigured(true, for: targetEnvironment, portfolio: portfolio)
         errorMessage = nil
         lastAttempt = Date()
@@ -260,6 +270,8 @@ final class AppModel {
         readKeyHint = nil
         settings.setReadCredentialConfigured(false, for: environment)
         currentPortfolio = nil
+        dailyBaseline = nil
+        try? baselineStore.remove(for: environment)
         errorMessage = nil
         refreshLoop?.cancel()
         if let cacheError { throw cacheError }
@@ -299,6 +311,9 @@ final class AppModel {
         globalShortcut?.update(shortcut)
     }
 
+    func pausePrivacyShortcut() { globalShortcut?.pause() }
+    func resumePrivacyShortcut() { globalShortcut?.resume(settings.privacyShortcut) }
+
     func setRefreshCadence(_ cadence: RefreshCadence) {
         settings.refreshCadence = cadence
         scheduleRefreshLoop()
@@ -315,6 +330,28 @@ final class AppModel {
             currency: currency,
             style: style ?? settings.valueStyle,
             separators: settings.separators)
+    }
+
+    /// `+€1,300.00 (+1.31%)`. The percentage also reveals the trend, so
+    /// privacy mode hides the whole string, not just the amount.
+    func changeDescription(_ change: DailyChange) -> String {
+        guard !isPrivate else { return Self.hiddenText }
+        let amount = CurrencyDisplay.signedString(
+            change.absolute,
+            currencyCode: change.currencyCode,
+            separators: settings.separators)
+        guard let fraction = change.fraction else { return amount }
+        return "\(amount) (\(CurrencyDisplay.percentString(fraction, separators: settings.separators)))"
+    }
+
+    private func recordBaseline(_ portfolio: CurrentPortfolio) {
+        let rolled = DailyBaseline.rolled(
+            existing: baselineStore.baseline(for: portfolio.environment) ?? dailyBaseline,
+            current: portfolio)
+        dailyBaseline = rolled
+        // Persistence is best-effort: without it the anchor survives only this
+        // process, which still yields a correct (shorter-window) figure.
+        try? baselineStore.save(rolled, for: portfolio.environment)
     }
 
     private func updateCredentialPresence() {
@@ -385,6 +422,16 @@ final class AppModel {
             // The UI remains usable for the current process, but will have no
             // launch cache. The next refresh can still provide a live value.
             return InMemorySnapshotCache()
+        }
+    }
+
+    private static func makeBaselineStore() -> any DailyBaselineStore {
+        do {
+            let workspace = try Workspace(variant: .current)
+            try workspace.prepare()
+            return FileDailyBaselineStore(workspace: workspace)
+        } catch {
+            return InMemoryDailyBaselineStore()
         }
     }
 }

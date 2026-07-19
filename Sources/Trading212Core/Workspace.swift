@@ -29,6 +29,9 @@ public struct Workspace: Equatable, Sendable {
     public func accountSnapshotURL(for environment: Trading212Environment) -> URL {
         cacheDirectoryURL.appending(component: "account-snapshot-\(environment.rawValue).json")
     }
+    public func dailyBaselineURL(for environment: Trading212Environment) -> URL {
+        cacheDirectoryURL.appending(component: "daily-baseline-\(environment.rawValue).json")
+    }
     public var snapshotsDirectoryURL: URL {
         rootURL.appending(component: "snapshots", directoryHint: .isDirectory)
     }

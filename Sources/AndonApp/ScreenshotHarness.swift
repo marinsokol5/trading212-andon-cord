@@ -4,8 +4,9 @@ import Trading212Core
 
 /// Offscreen screenshot mode: `AndonApp --screenshots [--real] [--output dir]`.
 ///
-/// Renders every sidebar route (plus the menu-bar popover and a privacy-mode
-/// shot) through `NSHostingView` into PNGs, in light and dark appearance, so
+/// Renders every sidebar route (plus the menu-bar menu header and a
+/// privacy-mode shot) through `NSHostingView` into PNGs, in light and dark
+/// appearance, so
 /// UI changes can be reviewed without launching the app.
 ///
 /// Two data modes:
@@ -121,10 +122,10 @@ enum ScreenshotHarness {
             }
 
             try await capture(
-                PortfolioPopoverView(model: model, openApp: {}, openSettings: {}),
+                MenuBarHeaderView(model: model),
                 size: nil,
                 appearance: appearance,
-                to: directory.appending(component: "popover.png"))
+                to: directory.appending(component: "menubar-header.png"))
         }
         model.navigate(to: .portfolio)
     }
@@ -195,10 +196,14 @@ enum ScreenshotHarness {
             metadataStore: InMemoryAccountMetadataStore())
         settings.setTradeCredentialConfigured(true, for: settings.environment)
 
+        let baselineStore = InMemoryDailyBaselineStore()
+        try baselineStore.save(
+            fixtureBaseline(for: portfolio), for: settings.environment)
         let model = AppModel(
             settings: settings,
             credentialStore: FixtureCredentialStore(),
             snapshotCache: InMemorySnapshotCache(),
+            baselineStore: baselineStore,
             makeProvider: { _, _ in FixtureProvider(portfolio: portfolio) })
 
         SnapshotLibrary.directoryOverride = try fixtureSnapshotsDirectory()
@@ -281,6 +286,18 @@ enum ScreenshotHarness {
             unrealizedProfitLoss: d("2345.67"),
             positions: positions,
             capturedAt: Date().addingTimeInterval(-300))
+    }
+
+    /// An anchor from earlier today, €620.47 below the fixture reading, so the
+    /// daily-change line renders a plausible gain.
+    private static func fixtureBaseline(for portfolio: CurrentPortfolio) -> DailyBaseline {
+        let gain = Decimal(string: "620.47", locale: Locale(identifier: "en_US_POSIX")) ?? 0
+        return DailyBaseline(
+            accountID: portfolio.account.id,
+            totalValue: portfolio.accountValue - gain,
+            unrealizedProfitLoss: portfolio.unrealizedProfitLoss.map { $0 - gain },
+            currencyCode: portfolio.account.currency,
+            asOf: portfolio.capturedAt.addingTimeInterval(-4 * 3600))
     }
 
     /// Two fixture snapshot files in a temp directory so the Snapshots route

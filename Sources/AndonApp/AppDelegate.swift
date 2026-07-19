@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarController = StatusBarController(
             model: model,
             openApp: { [weak main] in main?.show() },
-            openSettings: { [weak main] in main?.show(route: .account) })
+            openSettings: { [weak main] in main?.show(route: .settings) })
 
         main.show()
         Task { await model.start() }
@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    @objc func showSettingsAction() { mainWindowController?.show(route: .account) }
+    @objc func showSettingsAction() { mainWindowController?.show(route: .settings) }
     @objc func refreshAction() { Task { await model.refresh() } }
     @objc func togglePrivacyAction() { model.togglePrivacy() }
 }

@@ -22,6 +22,20 @@ final class GlobalShortcut {
         register(shortcut)
     }
 
+    /// Carbon hot-key delivery is deferred while a menu tracks, so a chord
+    /// pressed with the status-item menu open goes nowhere. Callers pause the
+    /// registration for that window; the chord then reaches the open menu as a
+    /// normal key event and its key-equivalent item handles it.
+    func pause() {
+        if let hotKey { UnregisterEventHotKey(hotKey) }
+        hotKey = nil
+    }
+
+    func resume(_ shortcut: ShortcutDefinition) {
+        guard hotKey == nil else { return }
+        register(shortcut)
+    }
+
     private func register(_ shortcut: ShortcutDefinition) {
         let identifier = EventHotKeyID(signature: Self.signature, id: 1)
         RegisterEventHotKey(
@@ -154,13 +168,34 @@ enum ShortcutName {
         return value
     }
 
+    static func keyEquivalent(_ code: UInt32) -> String? {
+        code == 49 ? " " : keyNames[code]?.lowercased()
+    }
+
     private static func keyName(_ code: UInt32) -> String {
-        let names: [UInt32: String] = [
-            0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z",
-            7: "X", 8: "C", 9: "V", 11: "B", 12: "Q", 13: "W", 14: "E",
-            15: "R", 16: "Y", 17: "T", 31: "O", 32: "U", 34: "I", 35: "P",
-            37: "L", 38: "J", 40: "K", 45: "N", 46: "M", 49: "Space",
-        ]
-        return names[code] ?? "Key \(code)"
+        keyNames[code] ?? "Key \(code)"
+    }
+
+    private static let keyNames: [UInt32: String] = [
+        0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z",
+        7: "X", 8: "C", 9: "V", 11: "B", 12: "Q", 13: "W", 14: "E",
+        15: "R", 16: "Y", 17: "T", 31: "O", 32: "U", 34: "I", 35: "P",
+        37: "L", 38: "J", 40: "K", 45: "N", 46: "M", 49: "Space",
+    ]
+}
+
+extension ShortcutDefinition {
+    /// Menu-item form of the chord, so menus display the one global shortcut
+    /// instead of introducing a second chord for the same action. The Carbon
+    /// hot key consumes the chord before menu tracking sees it, so this is a
+    /// display label with an in-menu fallback if registration ever fails.
+    var menuKeyEquivalent: (key: String, mask: NSEvent.ModifierFlags)? {
+        guard let key = ShortcutName.keyEquivalent(keyCode) else { return nil }
+        var mask: NSEvent.ModifierFlags = []
+        if modifiers & UInt32(cmdKey) != 0 { mask.insert(.command) }
+        if modifiers & UInt32(optionKey) != 0 { mask.insert(.option) }
+        if modifiers & UInt32(controlKey) != 0 { mask.insert(.control) }
+        if modifiers & UInt32(shiftKey) != 0 { mask.insert(.shift) }
+        return (key, mask)
     }
 }

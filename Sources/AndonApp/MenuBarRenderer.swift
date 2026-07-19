@@ -2,6 +2,9 @@ import AppKit
 
 @MainActor
 enum MenuBarRenderer {
+    /// Text drawn for `MenuBarSymbol.label` — the "T212 label" picker option.
+    private static let labelText = "T212" as NSString
+
     static func image(
         value: String,
         privateMode: Bool,
@@ -48,9 +51,10 @@ enum MenuBarRenderer {
         } else {
             valueSize = (value as NSString).size(withAttributes: valueAttributes)
         }
-        let topWidth: CGFloat = symbol == .icon
-            ? 10
-            : ("ANDON" as NSString).size(withAttributes: labelAttributes).width
+        let topWidth: CGFloat = switch symbol {
+        case .icon, .t212: 10
+        case .label: labelText.size(withAttributes: labelAttributes).width
+        }
         let width = ceil(max(valueSize.width, topWidth)) + 6
 
         return NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
@@ -81,9 +85,10 @@ enum MenuBarRenderer {
         let labelFont = NSFont.systemFont(ofSize: 10, weight: .medium)
         let valueAttributes = attributes(font: valueFont, color: foreground)
         let labelAttributes = attributes(font: labelFont, color: foreground)
-        let glyphWidth: CGFloat = symbol == .icon
-            ? 15
-            : ceil(("ANDON" as NSString).size(withAttributes: labelAttributes).width)
+        let glyphWidth: CGFloat = switch symbol {
+        case .icon, .t212: 15
+        case .label: ceil(labelText.size(withAttributes: labelAttributes).width)
+        }
         let valueWidth: CGFloat = privateMode
             ? 16
             : ceil((value as NSString).size(withAttributes: valueAttributes).width)
@@ -124,8 +129,10 @@ enum MenuBarRenderer {
         switch symbol {
         case .icon:
             drawMark(in: rect, color: color)
+        case .t212:
+            drawT212Mark(in: rect, color: color)
         case .label:
-            let text = "ANDON" as NSString
+            let text = labelText
             let size = text.size(withAttributes: attributes)
             text.draw(
                 in: NSRect(x: rect.midX - size.width / 2,
@@ -135,32 +142,81 @@ enum MenuBarRenderer {
         }
     }
 
-    /// Small monochrome andon lamp: a dome, center light, and base. Geometry is
+    /// Trading 212's mark: a symmetric upward chevron — an arrowhead with a
+    /// broad rounded peak and a shallow V-notch cut from its base, legs
+    /// splaying to the bottom corners. Same geometry as InvestingBar's
+    /// menu-bar mark, drawn into the largest centered square of `rect` so
+    /// both layouts render it undistorted.
+    private static func drawT212Mark(in rect: NSRect, color: NSColor) {
+        let side = min(rect.width, rect.height)
+        let box = NSRect(x: rect.midX - side / 2, y: rect.midY - side / 2,
+                         width: side, height: side)
+        func p(_ fx: CGFloat, _ fy: CGFloat) -> NSPoint {
+            NSPoint(x: box.minX + box.width * fx, y: box.minY + box.height * fy)
+        }
+
+        let apex = p(0.50, 0.84)             // top peak (rounded by the arc)
+        let outerBottomRight = p(0.89, 0.20)
+        let innerBottomRight = p(0.63, 0.20)
+        let notch = p(0.50, 0.50)            // floor of the V-notch
+        let innerBottomLeft = p(0.37, 0.20)
+        let outerBottomLeft = p(0.11, 0.20)
+        let peakRadius = box.width * 0.11
+
+        let chevron = NSBezierPath()
+        chevron.move(to: notch)
+        chevron.line(to: innerBottomLeft)
+        chevron.line(to: outerBottomLeft)
+        // Up the left flank, around the rounded peak, down the right flank.
+        chevron.appendArc(from: apex, to: outerBottomRight, radius: peakRadius)
+        chevron.line(to: outerBottomRight)
+        chevron.line(to: innerBottomRight)
+        chevron.close()
+        chevron.lineWidth = box.width * 0.04
+        chevron.lineJoinStyle = .round
+
+        color.setFill()
+        color.setStroke()
+        chevron.fill()
+        chevron.stroke()
+    }
+
+    /// Small monochrome rising stock line capped with an arrowhead at its peak —
+    /// the same trend mark InvestingBar draws for its menu bar. Geometry is
     /// intentionally simple so it remains readable at 8–15 points.
     private static func drawMark(in rect: NSRect, color: NSColor) {
-        color.setStroke()
-        color.setFill()
-        let lineWidth = max(1, rect.height * 0.13)
+        let area = rect.insetBy(dx: rect.width * 0.06, dy: rect.height * 0.10)
+        let normalized: [NSPoint] = [
+            NSPoint(x: 0.00, y: 0.10), NSPoint(x: 0.25, y: 0.42),
+            NSPoint(x: 0.50, y: 0.28), NSPoint(x: 0.75, y: 0.74),
+            NSPoint(x: 1.00, y: 0.98),
+        ]
+        let points = normalized.map {
+            NSPoint(x: area.minX + $0.x * area.width,
+                    y: area.minY + $0.y * area.height)
+        }
+
         let path = NSBezierPath()
-        path.lineWidth = lineWidth
+        path.lineWidth = max(1, min(rect.width, rect.height) * 0.13)
         path.lineCapStyle = .round
-        path.appendArc(
-            withCenter: NSPoint(x: rect.midX, y: rect.midY + rect.height * 0.05),
-            radius: rect.height * 0.29,
-            startAngle: 0,
-            endAngle: 180)
-        path.move(to: NSPoint(x: rect.midX - rect.height * 0.29, y: rect.midY))
-        path.line(to: NSPoint(x: rect.midX - rect.height * 0.29, y: rect.minY + rect.height * 0.20))
-        path.move(to: NSPoint(x: rect.midX + rect.height * 0.29, y: rect.midY))
-        path.line(to: NSPoint(x: rect.midX + rect.height * 0.29, y: rect.minY + rect.height * 0.20))
-        path.move(to: NSPoint(x: rect.midX - rect.height * 0.38, y: rect.minY + rect.height * 0.16))
-        path.line(to: NSPoint(x: rect.midX + rect.height * 0.38, y: rect.minY + rect.height * 0.16))
+        path.lineJoinStyle = .round
+        path.move(to: points[0])
+        for point in points.dropFirst() { path.line(to: point) }
+
+        // Arrowhead at the peak: two barbs angled back along the final segment.
+        let tip = points[points.count - 1]
+        let prev = points[points.count - 2]
+        let angle = atan2(tip.y - prev.y, tip.x - prev.x)
+        let barbLength = min(rect.width, rect.height) * 0.34
+        let spread = CGFloat.pi / 7
+        for offset in [-spread, spread] {
+            path.move(to: tip)
+            path.line(to: NSPoint(x: tip.x - barbLength * cos(angle + offset),
+                                  y: tip.y - barbLength * sin(angle + offset)))
+        }
+
+        color.setStroke()
         path.stroke()
-        NSBezierPath(ovalIn: NSRect(
-            x: rect.midX - lineWidth,
-            y: rect.midY - lineWidth * 0.45,
-            width: lineWidth * 2,
-            height: lineWidth * 2)).fill()
     }
 
     private static func drawEyeSlash(in rect: NSRect, color: NSColor) {
