@@ -35,7 +35,7 @@ enum CLIError: Error, Sendable, CustomStringConvertible {
 }
 
 struct AndonCLI: Sendable {
-    static let version = "0.2.0"
+    static let version = "0.3.0"
     static let help = """
     t212 — a local Trading 212 portfolio companion and emergency cord
 
