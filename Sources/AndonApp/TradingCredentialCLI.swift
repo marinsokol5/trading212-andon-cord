@@ -26,7 +26,7 @@ enum TradingCredentialCLI {
             do {
                 let payload = try JSONEncoder().encode(Payload(key: key, secret: secret))
                 return try run(
-                    arguments: ["credentials", "set-trading", "--stdin-json"],
+                    arguments: ["credentials", "set-trading"],
                     stdin: payload,
                     redactions: [key, secret])
             } catch {
@@ -39,7 +39,7 @@ enum TradingCredentialCLI {
         await Task.detached(priority: .userInitiated) {
             do {
                 return try run(
-                    arguments: ["credentials", "delete", "--trading"],
+                    arguments: ["credentials", "delete"],
                     stdin: nil,
                     redactions: [])
             } catch {

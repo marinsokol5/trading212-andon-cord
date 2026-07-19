@@ -43,10 +43,9 @@ struct AndonCLI: Sendable {
       t212 account [--json]
       t212 portfolio [--json|--output FILE]
       t212 snapshot view --input FILE [--json]
-      t212 whoami | status [--json] | save [--out FILE] | view [--in FILE]
-      t212 credentials set-trading [--stdin-json]
+      t212 credentials set-trading
       t212 credentials status [--json]
-      t212 credentials delete [--trading]
+      t212 credentials delete
       t212 sell-all [--output FILE] [--dry-run]
       t212 buy-all --input FILE [--cash-fraction 0.99] [--min-order 1]
                     [--precision 6] [--dry-run]
@@ -246,8 +245,8 @@ struct AndonCLI: Sendable {
             return try await portfolio(environment: environment, json: json, output: output)
         case .snapshotView(let input, let json):
             return try snapshotView(input: input, json: json)
-        case .credentialsSetTrading(let stdinJSON):
-            return try await setTradingCredential(environment: environment, stdinJSON: stdinJSON)
+        case .credentialsSetTrading:
+            return try await setTradingCredential(environment: environment)
         case .credentialsStatus(let json):
             return try credentialStatus(environment: environment, json: json)
         case .credentialsDeleteTrading:
@@ -332,8 +331,7 @@ struct AndonCLI: Sendable {
     }
 
     private func setTradingCredential(
-        environment: Trading212Environment,
-        stdinJSON _: Bool
+        environment: Trading212Environment
     ) async throws -> AndonExitCode {
         let data = try console.standardInput(limit: 16 * 1_024)
         let credentials: Trading212Credentials

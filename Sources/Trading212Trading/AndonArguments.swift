@@ -18,7 +18,7 @@ public struct AndonInvocation: Equatable, Sendable {
         case account(json: Bool)
         case portfolio(json: Bool, output: URL?)
         case snapshotView(input: URL, json: Bool)
-        case credentialsSetTrading(stdinJSON: Bool)
+        case credentialsSetTrading
         case credentialsStatus(json: Bool)
         case credentialsDeleteTrading
         case sellAll(output: URL?, dryRun: Bool)
@@ -61,8 +61,6 @@ public enum AndonArgumentParser {
         var positionals: [String] = []
         var json = false
         var dryRun = false
-        var stdinJSON = false
-        var trading = false
         var help = false
         var version = false
         var output: String?
@@ -90,12 +88,10 @@ public enum AndonArgumentParser {
             switch flag {
             case "--json": json = true
             case "--dry-run": dryRun = true
-            case "--stdin-json": stdinJSON = true
-            case "--trading": trading = true
             case "--help", "-h": help = true
             case "--version", "-V": version = true
-            case "--output", "--out": output = try value()
-            case "--input", "--in": input = try value()
+            case "--output": output = try value()
+            case "--input": input = try value()
             case "--cash-fraction":
                 let raw = try value()
                 guard let parsed = decimal(raw) else {
@@ -135,13 +131,13 @@ public enum AndonArgumentParser {
 
         let command: AndonInvocation.Command
         switch positionals {
-        case ["account"], ["whoami"]:
+        case ["account"]:
             try rejectMutationFlags(dryRun: dryRun)
-            try rejectUnused(stdinJSON: stdinJSON, trading: trading, output: output, input: input,
+            try rejectUnused(output: output, input: input,
                              cashFraction: cashFraction, minimumOrder: minimumOrder, precision: precision)
             command = .account(json: json)
 
-        case ["portfolio"], ["status"]:
+        case ["portfolio"]:
             try rejectMutationFlags(dryRun: dryRun)
             guard input == nil else {
                 throw AndonArgumentError.invalidCombination("portfolio uses --output, not --input")
@@ -149,21 +145,9 @@ public enum AndonArgumentParser {
             guard !(json && output != nil) else {
                 throw AndonArgumentError.invalidCombination("use either --json or --output, not both")
             }
-            try rejectUnused(stdinJSON: stdinJSON, trading: trading, output: nil, input: nil,
+            try rejectUnused(output: nil, input: nil,
                              cashFraction: cashFraction, minimumOrder: minimumOrder, precision: precision)
             command = .portfolio(json: json, output: output.map(fileURL))
-
-        case ["save"]:
-            try rejectMutationFlags(dryRun: dryRun)
-            guard !json, input == nil else {
-                throw AndonArgumentError.invalidCombination("save uses --output, not --json/--input")
-            }
-            try rejectUnused(stdinJSON: stdinJSON, trading: trading, output: nil, input: nil,
-                             cashFraction: cashFraction, minimumOrder: minimumOrder, precision: precision)
-            command = .portfolio(
-                json: false,
-                output: fileURL(output ?? "portfolio.json")
-            )
 
         case ["snapshot", "view"]:
             try rejectMutationFlags(dryRun: dryRun)
@@ -171,54 +155,40 @@ public enum AndonArgumentParser {
                 throw AndonArgumentError.invalidCombination("snapshot view uses --input, not --output")
             }
             guard let input else { throw AndonArgumentError.missingRequiredFlag("--input FILE") }
-            try rejectUnused(stdinJSON: stdinJSON, trading: trading, output: nil, input: nil,
+            try rejectUnused(output: nil, input: nil,
                              cashFraction: cashFraction, minimumOrder: minimumOrder, precision: precision)
             command = .snapshotView(input: fileURL(input), json: json)
 
-        case ["view"]:
-            try rejectMutationFlags(dryRun: dryRun)
-            guard output == nil else {
-                throw AndonArgumentError.invalidCombination("view uses --input, not --output")
-            }
-            try rejectUnused(stdinJSON: stdinJSON, trading: trading, output: nil, input: nil,
-                             cashFraction: cashFraction, minimumOrder: minimumOrder, precision: precision)
-            command = .snapshotView(
-                input: fileURL(input ?? "portfolio.json"),
-                json: json
-            )
-
         case ["credentials", "set-trading"]:
-            guard !json, !dryRun, !trading, output == nil, input == nil,
+            guard !json, !dryRun, output == nil, input == nil,
                   cashFraction == nil, minimumOrder == nil, precision == nil else {
                 throw AndonArgumentError.invalidCombination("unsupported flag for credentials set-trading")
             }
-            command = .credentialsSetTrading(stdinJSON: stdinJSON)
+            command = .credentialsSetTrading
 
         case ["credentials", "status"]:
-            guard !dryRun, !stdinJSON, !trading, output == nil, input == nil,
+            guard !dryRun, output == nil, input == nil,
                   cashFraction == nil, minimumOrder == nil, precision == nil else {
                 throw AndonArgumentError.invalidCombination("unsupported flag for credentials status")
             }
             command = .credentialsStatus(json: json)
 
         case ["credentials", "delete"]:
-            fallthrough
-        case ["credentials", "delete-trading"]:
-            guard !json, !dryRun, !stdinJSON, output == nil, input == nil,
+            guard !json, !dryRun, output == nil, input == nil,
                   cashFraction == nil, minimumOrder == nil, precision == nil else {
                 throw AndonArgumentError.invalidCombination("unsupported flag for credentials delete")
             }
             command = .credentialsDeleteTrading
 
         case ["sell-all"]:
-            guard !json, !stdinJSON, !trading, input == nil,
+            guard !json, input == nil,
                   cashFraction == nil, minimumOrder == nil, precision == nil else {
                 throw AndonArgumentError.invalidCombination("unsupported flag for sell-all")
             }
             command = .sellAll(output: output.map(fileURL), dryRun: dryRun)
 
         case ["buy-all"]:
-            guard !json, !stdinJSON, !trading, output == nil else {
+            guard !json, output == nil else {
                 throw AndonArgumentError.invalidCombination("unsupported flag for buy-all")
             }
             guard let input else { throw AndonArgumentError.missingRequiredFlag("--input FILE") }
@@ -266,15 +236,13 @@ public enum AndonArgumentParser {
     }
 
     private static func rejectUnused(
-        stdinJSON: Bool,
-        trading: Bool,
         output: String?,
         input: String?,
         cashFraction: Decimal?,
         minimumOrder: Decimal?,
         precision: Int?
     ) throws {
-        guard !stdinJSON, !trading, output == nil, input == nil,
+        guard output == nil, input == nil,
               cashFraction == nil, minimumOrder == nil, precision == nil else {
             throw AndonArgumentError.invalidCombination("one or more flags do not apply to this command")
         }

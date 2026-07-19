@@ -81,38 +81,85 @@ extension Color {
     }
 }
 
-/// Miniature of the app icon — the glossy red arcade button on the yellow
-/// tile. At brand-mark sizes the icon's candlesticks fall away; the button
-/// alone carries the identity. The literal icon palette lives here, not in
-/// the semantic roles above: red still means LIVE/destructive everywhere else.
+/// Miniature of the app icon — ascending candlesticks with the glossy red
+/// arcade button as the next tick, on the yellow tile. Below ~22 pt the
+/// candles stop resolving, so the button alone carries the identity. The
+/// literal icon palette lives here, not in the semantic roles above: red
+/// still means LIVE/destructive everywhere else.
 struct BrandMark: View {
     var size: CGFloat = 28
+
+    private static let ballStops: [Gradient.Stop] = [
+        .init(color: Color(hex: "#ff9a85"), location: 0),
+        .init(color: Color(hex: "#f04e46"), location: 0.35),
+        .init(color: Color(hex: "#c9182b"), location: 0.75),
+        .init(color: Color(hex: "#96101f"), location: 1),
+    ]
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.24)
             .fill(LinearGradient(
                 colors: [Color(hex: "#ffd23f"), Color(hex: "#f0a400")],
                 startPoint: .top, endPoint: .bottom))
-            .overlay(
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: "#6f0a15"))
-                        .offset(y: size * 0.10)
-                    Circle()
-                        .fill(RadialGradient(
-                            stops: [
-                                .init(color: Color(hex: "#ff9a85"), location: 0),
-                                .init(color: Color(hex: "#f04e46"), location: 0.35),
-                                .init(color: Color(hex: "#c9182b"), location: 0.75),
-                                .init(color: Color(hex: "#96101f"), location: 1),
-                            ],
-                            center: UnitPoint(x: 0.36, y: 0.30),
-                            startRadius: 0,
-                            endRadius: size * 0.55))
-                }
-                .padding(size * 0.18))
+            .overlay { if size >= 22 { fullMark } else { buttonOnly } }
             .frame(width: size, height: size)
             .accessibilityHidden(true)
+    }
+
+    /// The icon's composition, drawn in the same 1024-unit grid as
+    /// Resources/AndonIcon.svg so the mark and the .icns stay in sync.
+    private var fullMark: some View {
+        Canvas { context, canvasSize in
+            let s = canvasSize.width / 1024
+            let ink = Color(hex: "#262b34")
+
+            var wicks = Path()
+            for (x, top, bottom): (CGFloat, CGFloat, CGFloat) in
+                [(250, 520, 740), (390, 430, 690), (530, 330, 610)] {
+                wicks.move(to: CGPoint(x: x * s, y: top * s))
+                wicks.addLine(to: CGPoint(x: x * s, y: bottom * s))
+            }
+            context.stroke(
+                wicks,
+                with: .color(ink),
+                style: StrokeStyle(lineWidth: max(1, 26 * s), lineCap: .round))
+            for (x, y, h): (CGFloat, CGFloat, CGFloat) in
+                [(210, 560, 140), (350, 470, 170), (490, 370, 190)] {
+                context.fill(
+                    Path(roundedRect: CGRect(x: x * s, y: y * s, width: 80 * s, height: h * s),
+                         cornerRadius: 18 * s),
+                    with: .color(ink))
+            }
+
+            context.fill(
+                Path(ellipseIn: CGRect(x: 614 * s, y: 356 * s, width: 192 * s, height: 192 * s)),
+                with: .linearGradient(
+                    Gradient(colors: [Color(hex: "#a31220"), Color(hex: "#6f0a15")]),
+                    startPoint: CGPoint(x: 710 * s, y: 356 * s),
+                    endPoint: CGPoint(x: 710 * s, y: 548 * s)))
+            context.fill(
+                Path(ellipseIn: CGRect(x: 614 * s, y: 318 * s, width: 192 * s, height: 192 * s)),
+                with: .radialGradient(
+                    Gradient(stops: Self.ballStops),
+                    center: CGPoint(x: 683 * s, y: 376 * s),
+                    startRadius: 0,
+                    endRadius: 163 * s))
+        }
+    }
+
+    private var buttonOnly: some View {
+        ZStack {
+            Circle()
+                .fill(Color(hex: "#6f0a15"))
+                .offset(y: size * 0.10)
+            Circle()
+                .fill(RadialGradient(
+                    stops: Self.ballStops,
+                    center: UnitPoint(x: 0.36, y: 0.30),
+                    startRadius: 0,
+                    endRadius: size * 0.55))
+        }
+        .padding(size * 0.18)
     }
 }
 

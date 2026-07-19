@@ -1,4 +1,7 @@
-# Trading212 Andon Cord
+<h1>
+  <img src="Resources/AndonIcon.svg" width="32" alt="" align="center">
+  Trading212 Andon Cord
+</h1>
 
 Trading212 Andon Cord is an open-source, native macOS companion for a Trading
 212 Invest or ISA account. It shows the account in a normal SwiftUI app and the
@@ -102,7 +105,7 @@ The app's Account screen is the simplest setup path. For a caller that can safel
 produce one JSON object on an anonymous pipe, the equivalent CLI is:
 
 ```sh
-t212 credentials set-trading --stdin-json
+t212 credentials set-trading
 ```
 
 Write one JSON object to stdin when automating that prompt shape:
@@ -136,15 +139,9 @@ t212 portfolio --json
 t212 portfolio --output FILE
 t212 snapshot view --input FILE
 
-# Compatibility spellings from the original tools:
-t212 whoami
-t212 status [--json]
-t212 save [--out FILE]
-t212 view [--in FILE]
-
 t212 credentials status [--json]
-t212 credentials set-trading --stdin-json
-t212 credentials delete --trading
+t212 credentials set-trading
+t212 credentials delete
 
 t212 sell-all [--output FILE] [--dry-run]
 t212 buy-all --input FILE [--cash-fraction 0.99]

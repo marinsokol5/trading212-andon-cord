@@ -259,7 +259,7 @@ final class AndonCLITests: XCTestCase {
         )
 
         let code = await cli.run(arguments: [
-            "credentials", "set-trading", "--stdin-json",
+            "credentials", "set-trading",
         ])
         XCTAssertEqual(code, .authenticationOrAccountMismatch)
         XCTAssertEqual(tradeStore.setCount, 0)

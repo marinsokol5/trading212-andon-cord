@@ -32,9 +32,9 @@ final class AndonArgumentParserTests: XCTestCase {
 
         XCTAssertEqual(
             try AndonArgumentParser.parse([
-                "credentials", "set-trading", "--stdin-json",
+                "credentials", "set-trading",
             ]).command,
-            .credentialsSetTrading(stdinJSON: true)
+            .credentialsSetTrading
         )
         XCTAssertEqual(
             try AndonArgumentParser.parse([
@@ -44,7 +44,7 @@ final class AndonArgumentParserTests: XCTestCase {
         )
         XCTAssertEqual(
             try AndonArgumentParser.parse([
-                "credentials", "delete", "--trading",
+                "credentials", "delete",
             ]).command,
             .credentialsDeleteTrading
         )
@@ -98,12 +98,26 @@ final class AndonArgumentParserTests: XCTestCase {
         XCTAssertThrowsError(try AndonArgumentParser.parse([
             "snapshot", "view",
         ]))
-        XCTAssertEqual(
-            try? AndonArgumentParser.parse(["credentials", "delete"]).command,
-            .credentialsDeleteTrading
-        )
         XCTAssertThrowsError(try AndonArgumentParser.parse([
             "buy-all", "--input", "x", "--cash-fraction", "not-a-number",
+        ]))
+        // Legacy verb aliases and dead flags are gone.
+        XCTAssertThrowsError(try AndonArgumentParser.parse(["whoami"]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse(["status"]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse(["save"]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse(["view"]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse(["credentials", "delete-trading"]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse([
+            "credentials", "set-trading", "--stdin-json",
+        ]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse([
+            "credentials", "delete", "--trading",
+        ]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse([
+            "portfolio", "--out", "x.json",
+        ]))
+        XCTAssertThrowsError(try AndonArgumentParser.parse([
+            "snapshot", "view", "--in", "x.json",
         ]))
     }
 
