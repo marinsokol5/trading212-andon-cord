@@ -1,8 +1,8 @@
 cask "trading212-andon-cord" do
-  version "0.1.0"
+  version "0.2.0"
   # `Scripts/publish.sh` replaces this with the release archive's SHA-256
   # before creating the tag. The source cask is not published as-is.
-  sha256 "4698856f8b7f33205bef048f3d929ef977f96d02f3ba92503df715ad0f64a164"
+  sha256 "bfdbfbcda0855afbb4d835a5c0ea9241db650ba43d1c193f5941e7fedf519cdf"
 
   url "https://github.com/marinsokol5/trading212-andon-cord/releases/download/v#{version}/Trading212-Andon-Cord-#{version}.zip"
   name "Trading212 Andon Cord"
